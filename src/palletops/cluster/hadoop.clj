@@ -1,5 +1,5 @@
 (ns palletops.cluster.hadoop
-  "Builds a hadoop cluster"
+  "Builds a hadoop cluster."
   (:use
    [pallet.actions :only [package-manager]]
    [pallet.api :only [group-spec plan-fn server-spec]]
@@ -11,6 +11,8 @@
            collectd-init-service install-collectd]]
    [pallet.crate.etc-hosts :only [set-hostname]]
    [pallet.crate.graphite :only [graphite]]
+   [palletops.crate.hadoop :only [data-node name-node job-tracker task-tracker]]
+   [pallet.crate.java :only [install-java java-settings]]
    [pallet.node :only [primary-ip]]))
 
 (def-plan-fn collectd-settings-map
@@ -29,10 +31,12 @@
              (Plugin write_graphite
                      (Carbon
                       Host (primary-ip (:node logger))
-                      Port (str (-> carbon-config :cache :LINE_RECEIVER_PORT))
+                      Port (str (or
+                                 (-> carbon-config :cache :LINE_RECEIVER_PORT)
+                                 2003))
                       ;; EscapeCharacter "_"
                       StoreRates "false"
-                      Prefix "carbon.agents."
+                      Prefix "collectd."
                       AlwaysAppendDS "false")))}))
 
 (def graphite-settings
@@ -55,11 +59,13 @@
              [settings (collectd-settings-map)]
              (collectd-settings settings))
             :install (plan-fn
+                      (set-hostname)
                       (collectd-user {})
                       (install-collectd))
             :configure (plan-fn (collectd-conf {})
-                                (set-hostname)
-                                (collectd-init-service {:action :start}))}))
+                                (collectd-init-service {:action :start}))
+            :restart-collectd (plan-fn
+                               (collectd-init-service {:action :restart}))}))
 
 (def graphite-server
   (server-spec
@@ -79,36 +85,27 @@
    :collectd
    :extends [base-server (collectd-server)]))
 
+(def java
+  (server-spec
+   :phases {:settings (java-settings {:vendor :openjdk})
+            :install (install-java)}))
 
-;; (deftest ^:live-test live-test
-;;   (let [settings {}]
-;;     (doseq [image (images)]
-;;       (test-nodes
-;;        [compute node-map node-types [; :install
-;;                                      :collect-ssh-keys
-;;                                      :configure
-;;                                      :install-test
-;;                                      :configure-test]]
-;;        {:namenode
-;;         (group-spec
-;;          "namenode"
-;;          :image image
-;;          :count 1
-;;          :extends [java (name-node settings) (job-tracker settings)]
-;;          :phases {:bootstrap (plan-fn (automated-admin-user))
-;;                   :install-test (plan-fn (download-books))
-;;                   :configure-test (plan-fn (import-books-to-hdfs))
-;;                   :run-test (plan-fn (run-books))
-;;                   :post-run (plan-fn (get-books-output))})
-;;          :datanode
-;;          (group-spec
-;;           "datanode"
-;;           :image image
-;;           :count 1
-;;           :extends [java (data-node settings) (task-tracker settings)]
-;;           :phases {:bootstrap (plan-fn (automated-admin-user))})}
-;;        (let [op (lift (:namenode node-types)
-;;                       :phase [:run-test :post-run]
-;;                       :compute compute)]
-;;          @op
-;;          (is (complete? op)))))))
+(def namenode-settings {})
+
+(def namenode-group
+  (group-spec
+   "namenode"
+   :extends [base-server java
+             (name-node namenode-settings)
+             (job-tracker namenode-settings)
+             (collectd-server)]))
+
+(def datanode-settings {})
+
+(def datanode-group
+  (group-spec
+   "datanode"
+   :extends [base-server java
+             (data-node datanode-settings)
+             (task-tracker datanode-settings)
+             (collectd-server)]))
