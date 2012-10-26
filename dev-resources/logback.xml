@@ -10,7 +10,7 @@
     </encoder>
   </appender>
 
-  <appender name="COMPUTFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+  <appender name="COMPUTEFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/jclouds-compute.log</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <fileNamePattern>logs/old/jclouds-compute.%d{yyyy-MM-dd}.log</fileNamePattern>
@@ -82,6 +82,8 @@
     <appender-ref ref="VMFESTFILE" />
   </logger>
 
+  <logger name="net.schmizz" level="WARN"/>
+  <logger name="clj-ssh" level="WARN"/>
   <logger name="pallet.action-plan" level="DEBUG"/>
   <logger name="pallet.algo.fsm" level="WARN"/>
   <logger name="pallet.algo.fsmop" level="WARN"/>
