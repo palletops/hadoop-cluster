@@ -2,7 +2,7 @@
   "Builds a hadoop cluster."
   (:use
    [pallet.actions :only [package-manager]]
-   [pallet.api :only [group-spec plan-fn server-spec]]
+   [pallet.api :only [group-spec node-spec plan-fn server-spec]]
    [pallet.crate
     :only [def-plan-fn get-settings get-node-settings nodes-with-role]]
    [pallet.crate.automated-admin-user :only [automated-admin-user]]
@@ -71,7 +71,6 @@
   (server-spec
    :extends [(graphite graphite-settings)]
    :roles #{:graphite}))
-
 
 ;;; # Group Specs
 
