@@ -20,12 +20,11 @@
   (let [settings {}]
     (doseq [image (images)]
       (test-nodes
-       [compute node-map node-types [:install
-                                     :collect-ssh-keys
-                                     :configure
-                                     :restart-collectd
-                                     :install-test
-                                     :configure-test]]
+       [compute node-map node-types
+        [:install
+         :collect-ssh-keys
+         :configure :restart-collectd :run :init
+         :install-test :configure-test]]
        {:namenode (assoc
                       (group-spec
                        :namenode
