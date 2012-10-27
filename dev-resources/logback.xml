@@ -6,7 +6,7 @@
       <level>INFO</level>
     </filter>
     <encoder>
-      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+      <pattern>%d{HH:mm:ss.SS} [%thread] %-5level %logger{20} - %msg%n</pattern>
     </encoder>
   </appender>
 
@@ -54,6 +54,23 @@
     </encoder>
   </appender>
 
+  <appender name="SIFT" class="ch.qos.logback.classic.sift.SiftingAppender">
+    <ImmediateFlush>true</ImmediateFlush>
+    <discriminator>
+      <key>target</key>
+      <defaultValue>unspecified</defaultValue>
+    </discriminator>
+    <sift>
+      <appender name="FILE-${target}" class="ch.qos.logback.core.FileAppender">
+        <file>logs/target-${target}.log</file>
+        <append>false</append>
+        <encoder>
+          <pattern>%msg%n</pattern>
+        </encoder>
+      </appender>
+    </sift>
+  </appender>
+
   <logger name="jclouds.headers" level="DEBUG">
     <appender-ref ref="WIREFILE" />
   </logger>
@@ -71,10 +88,12 @@
   </logger>
 
   <logger name="pallet" level="DEBUG">
+    <appender-ref ref="SIFT" />
     <appender-ref ref="PALLETFILE" />
   </logger>
 
   <logger name="palletops" level="DEBUG">
+    <appender-ref ref="SIFT" />
     <appender-ref ref="PALLETFILE" />
   </logger>
 
