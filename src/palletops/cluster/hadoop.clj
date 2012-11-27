@@ -17,7 +17,9 @@
    [pallet.crate.etc-hosts :only [set-hostname]]
    [pallet.crate.graphite :only [graphite]]
    [palletops.crate.hadoop :only [hadoop-server-spec]]
-   [palletops.hadoop-config :only [default-node-config]]
+   [palletops.hadoop-config
+    :only [default-node-config nested-maps->dotted-keys]]
+   [palletops.locos :only [deep-merge]]
    [pallet.crate.java :only [install-java java-settings]]
    [pallet.node :only [hostname primary-ip]]
    [pallet.utils :only [apply-map]]))
@@ -129,67 +131,12 @@
              (collectd-server)]))
 
 ;;; # Data based configuration
-
-(def hadoop-java-env-var
-  {:namenode :HADOOP_NAMENODE_OPTS
-   :secondary-namenode :HADOOP_SECONDARYNAMENODE_OPTS
-   :jobtracker :HADOOP_JOBTRACKER_OPTS
-   :datanode :HADOOP_DATANODE_OPTS
-   :tasktracker :HADOOP_TASKTRACKER_OPTS})
-
 (def default-cluster-config
-  {:namenode {:java {:jmx-port 3000 :jmx-authenticate false}}
-   :secondary-namenode {:java {:jmx-port 3001 :jmx-authenticate false}}
-   :jobtracker {:java {:jmx-port 3002 :jmx-authenticate false}}
-   :datanode {:java {:jmx-port 3003 :jmx-authenticate false}}
-   :tasktracker {:java {:jmx-port 3004 :jmx-authenticate false}}})
-
-
-(def java-system-property
-  {:jmx-authenticate "com.sun.management.jmxremote.authenticate"
-   :jmx-password-file "com.sun.management.jmxremote.password.file"
-   :jmx-port "com.sun.management.jmxremote.port"
-   :jmx "com.sun.management.jmxremote"
-   :jmx-ssl "com.sun.management.jmxremote.ssl"
-   :jmx-ssl-registry "com.sun.management.jmxremote.registry.ssl"
-   :jmx-ssl-client-auth "com.sun.management.jmxremote.ssl.need.client.auth"
-   :key-store "javax.net.ssl.keyStore"
-   :key-store-type "javax.net.ssl.keyStoreType"
-   :key-store-password "javax.net.ssl.keyStorePassword"
-   :trust-store "javax.net.ssl.trustStore"
-   :trust-store-type "javax.net.ssl.trustStoreType"
-   :trust-store-password "javax.net.ssl.trustStorePassword"})
-
-(defn java-system-properties
-  "Return a java argument string to set the system properties specified in
-   `options`."
-  [options]
-  (join " " (map
-             #(format "-D%s%s%s"
-                      (java-system-property (key %))
-                      (if (nil? (val %)) "" "=")
-                      (if (nil? (val %)) "" (val %)))
-             options)))
-
-(defn jmx-options
-  "Enable port based JMX, with no security.
-   Pass a truthy value to `:jmx-local` to enable local JMX access.
-   Pass :jmx-password-file to set the password file."
-  [{:keys [jmx-port jmx-local jmx-password-file
-           jmx-ssl jmx-ssl-client-auth jmx-ssl-registry
-           jmx-authenticate]
-    :as options}]
-  (let [options (if jmx-local
-                  (-> options (dissoc :jmx-local) (assoc :jmx-port nil))
-                  options)]
-    (java-system-properties options)))
-
-(defn ssl-options
-  "Return system properties string to control use of ssl."
-  [{:keys [key-store key-store-type key-store-password
-           trust-store trust-store-type trust-store-password]
-    :as options}]
-  (java-system-properties options))
+  {:namenode {:jmx-port 3000 :jmx-authenticate false}
+   :secondary-namenode {:jmx-port 3001 :jmx-authenticate false}
+   :jobtracker {:jmx-port 3002 :jmx-authenticate false}
+   :datanode {:jmx-port 3003 :jmx-authenticate false}
+   :tasktracker {:jmx-port 3004 :jmx-authenticate false}})
 
 (defn hadoop-mbeans
   "Return the collectd spec for specified beans, named with a given `prefix`.
@@ -303,8 +250,8 @@
         connections (fn [settings hostname]
                       (mapcat
                        (fn [role]
-                         (when-let [{:keys [java]} (settings role)]
-                           (when-let [port (:jmx-port java)]
+                         (when-let [config (-> settings :config role)]
+                           (when-let [port (:jmx-port config)]
                              (collectd-plugin-config
                               :generic-jmx-connection
                               {:url (format jmx-endpoint port)
@@ -345,20 +292,37 @@
       :count count))))
 
 (defn hadoop-cluster
-  "Returns a cluster-spec for a hadoop cluster, configured as per the arguments"
-  [prefix {:keys [groups node-spec] :as config}]
-  (let [settings (->> (dissoc config :groups :node-spec)
-                      (map (fn group-spec [[role {:keys [java] :as args}]]
-                             [role
-                              (merge
-                               args
-                               {:env-vars
-                                {(hadoop-java-env-var role)
-                                 (join " " [(ssl-options java)
-                                            (jmx-options java)])}})]))
-                      (into {}))
+  "Returns a cluster-spec for a hadoop cluster, configured as per the arguments.
+
+  `:hadoop-config` a map of hadoop configuration properties
+  `:settings`      a map of settings passed to each role-spec
+
+  You can also specify configuration for each role, as a map under the name of
+  role as a keyword.
+
+  (hadoop-cluster
+   \"hc1\"
+   {:groups {:nn {:node-spec {}
+                  :count 1
+                  :roles #{:namenode :jobtracker}}
+             :slave {:node-spec {}
+                     :count 1
+                     :roles #{:datanode :tasktracker}}}
+    :hadoop-config {:io.file.buffer.size 65536}
+    :namenode {:jmx-port 3000}
+    :secondary-namenode {:jmx-port 3001}
+    :jobtracker {:jmx-port 3002}
+    :datanode {:jmx-port 3003}
+    :tasktracker {:jmx-port 3004}})"
+  [prefix {:keys [groups hadoop-config node-spec settings] :as config}]
+  (let [config (->
+                default-cluster-config
+                (deep-merge (dissoc config :groups :node-spec :hadoop-config))
+                (nested-maps->dotted-keys "pallet.")
+                (merge hadoop-config))
+        _ (debugf "hadoop-cluster %s" config)
         settings-fn (plan-fn
-                     [config (default-node-config (:config settings))]
+                     [config (default-node-config config)]
                      (m-result (debugf "default-node-config %s" config))
                      (m-result (assoc settings :config config)))]
     (cluster-spec
@@ -366,20 +330,3 @@
      :groups (conj
               (map (partial hadoop-group-spec node-spec settings-fn) groups)
               graphite-group))))
-
-
-;;; Example
-(comment
-  (hadoop-cluster
-   "hc1"
-   {:groups {:nn {:node-spec {}
-                  :count 1
-                  :roles #{:namenode :jobtracker}}
-             :slave {:node-spec {}
-                     :count 1
-                     :roles #{:datanode :tasktracker}}}
-    :namenode {:java {:jmx-port 3000}}
-    :secondary-namenode {:java {:jmx-port 3001}}
-    :jobtracker {:java {:jmx-port 3002}}
-    :datanode {:java {:jmx-port 3003}}
-    :tasktracker {:java {:jmx-port 3004}}}))

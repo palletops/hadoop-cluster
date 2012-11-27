@@ -62,17 +62,16 @@
                            :slave {:node-spec {}
                                    :count 1
                                    :roles #{:datanode :tasktracker}}}
-                  :namenode {:java (merge {:jmx-port 3000} java-opts)}
-                  :secondary-namenode {:java
-                                        (merge {:jmx-port 3001} java-opts)}
-                  :jobtracker {:java (merge {:jmx-port 3002} java-opts)}
-                  :datanode {:java (merge {:jmx-port 3003} java-opts)}
-                  :tasktracker {:java (merge {:jmx-port 3004} java-opts)}})]
+                  :namenode (merge {:jmx-port 3000} java-opts)
+                  :secondary-namenode (merge {:jmx-port 3001} java-opts)
+                  :jobtracker (merge {:jmx-port 3002} java-opts)
+                  :datanode (merge {:jmx-port 3003} java-opts)
+                  :tasktracker (merge {:jmx-port 3004} java-opts)})]
     (doseq [image (images)]
       (test-nodes
        [compute node-map node-types
         [
-         :install
+         ;; :install
          :collect-ssh-keys
          :configure
          :restart-collectd
