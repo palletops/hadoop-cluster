@@ -58,25 +58,27 @@
                  "hc1"
                  {:groups {:nn {:node-spec {}
                                 :count 1
-                                :roles #{:name-node :job-tracker}}
+                                :roles #{:namenode :jobtracker}}
                            :slave {:node-spec {}
                                    :count 1
-                                   :roles #{:data-node :task-tracker}}}
-                  :name-node {:java (merge {:jmx-port 3000} java-opts)}
-                  :secondary-name-node {:java
+                                   :roles #{:datanode :tasktracker}}}
+                  :namenode {:java (merge {:jmx-port 3000} java-opts)}
+                  :secondary-namenode {:java
                                         (merge {:jmx-port 3001} java-opts)}
-                  :job-tracker {:java (merge {:jmx-port 3002} java-opts)}
-                  :data-node {:java (merge {:jmx-port 3003} java-opts)}
-                  :task-tracker {:java (merge {:jmx-port 3004} java-opts)}})]
+                  :jobtracker {:java (merge {:jmx-port 3002} java-opts)}
+                  :datanode {:java (merge {:jmx-port 3003} java-opts)}
+                  :tasktracker {:java (merge {:jmx-port 3004} java-opts)}})]
     (doseq [image (images)]
       (test-nodes
        [compute node-map node-types
-        [:install
+        [
+         :install
          :collect-ssh-keys
          :configure
          :restart-collectd
          :run :init
-         :install-test :configure-test
+         :install-test
+         :configure-test
          ]]
        (update-in
         (into {}

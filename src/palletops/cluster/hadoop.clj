@@ -17,6 +17,7 @@
    [pallet.crate.etc-hosts :only [set-hostname]]
    [pallet.crate.graphite :only [graphite]]
    [palletops.crate.hadoop :only [hadoop-server-spec]]
+   [palletops.hadoop-config :only [default-node-config]]
    [pallet.crate.java :only [install-java java-settings]]
    [pallet.node :only [hostname primary-ip]]
    [pallet.utils :only [apply-map]]))
@@ -38,6 +39,9 @@
               [:Plugin ~'interface []]
               [:Plugin ~'load []]
               [:Plugin ~'memory []]
+              [:Plugin ~'swap
+               [[:ReportByDevice false]
+                [:ReportBytes false]]]
               [:Plugin ~'write_graphite
                [[:Carbon
                  [[:Host ~(primary-ip (:node logger))]
@@ -110,8 +114,8 @@
   (group-spec
    "namenode"
    :extends [base-server java
-             (hadoop-server-spec :name-node namenode-settings)
-             (hadoop-server-spec :job-tracker namenode-settings)
+             (hadoop-server-spec :namenode namenode-settings)
+             (hadoop-server-spec :jobtracker namenode-settings)
              (collectd-server)]))
 
 (def datanode-settings {})
@@ -120,25 +124,25 @@
   (group-spec
    "datanode"
    :extends [base-server java
-             (hadoop-server-spec :data-node datanode-settings)
-             (hadoop-server-spec :task-tracker datanode-settings)
+             (hadoop-server-spec :datanode datanode-settings)
+             (hadoop-server-spec :tasktracker datanode-settings)
              (collectd-server)]))
 
 ;;; # Data based configuration
 
 (def hadoop-java-env-var
-  {:name-node :HADOOP_NAMENODE_OPTS
-   :secondary-name-node :HADOOP_SECONDARYNAMENODE_OPTS
-   :job-tracker :HADOOP_JOBTRACKER_OPTS
-   :data-node :HADOOP_DATANODE_OPTS
-   :task-tracker :HADOOP_TASKTRACKER_OPTS})
+  {:namenode :HADOOP_NAMENODE_OPTS
+   :secondary-namenode :HADOOP_SECONDARYNAMENODE_OPTS
+   :jobtracker :HADOOP_JOBTRACKER_OPTS
+   :datanode :HADOOP_DATANODE_OPTS
+   :tasktracker :HADOOP_TASKTRACKER_OPTS})
 
 (def default-cluster-config
-  {:name-node {:java {:jmx-port 3000 :jmx-authenticate false}}
-   :secondary-name-node {:java {:jmx-port 3001 :jmx-authenticate false}}
-   :job-tracker {:java {:jmx-port 3002 :jmx-authenticate false}}
-   :data-node {:java {:jmx-port 3003 :jmx-authenticate false}}
-   :task-tracker {:java {:jmx-port 3004 :jmx-authenticate false}}})
+  {:namenode {:java {:jmx-port 3000 :jmx-authenticate false}}
+   :secondary-namenode {:java {:jmx-port 3001 :jmx-authenticate false}}
+   :jobtracker {:java {:jmx-port 3002 :jmx-authenticate false}}
+   :datanode {:java {:jmx-port 3003 :jmx-authenticate false}}
+   :tasktracker {:java {:jmx-port 3004 :jmx-authenticate false}}})
 
 
 (def java-system-property
@@ -189,18 +193,18 @@
 
 (defn hadoop-mbeans
   "Return the collectd spec for specified beans, named with a given `prefix`.
-   Known bean components are :name-node-state :name-node-activity,
-   :name-node-info :data-node-activity :data-node-info :data-node-state
-   :job-tracker-info :task-tracker-info :rpc-act and :rpc-act-detail."
+   Known bean components are :namenode-state :namenode-activity,
+   :namenode-info :datanode-activity :datanode-info :datanode-state
+   :jobtracker-info :tasktracker-info :rpc-act and :rpc-act-detail."
   [prefix components]
   (map
-   {:name-node-state
+   {:namenode-state
     (mbean
      (str prefix "-nn-state") "hadoop:service=NameNode,name=FSNamesystemState"
      {:prefix (str prefix ".nn-state")}
      (mbean-value "OpenFileDescriptorCount" "gauge" :prefix "filedes.open"))
 
-    :name-node-activity
+    :namenode-activity
     (mbean
      (str prefix "-nn-act") "hadoop:service=NameNode,name=NameNodeActivity"
      {:prefix (str prefix ".nn-act")}
@@ -212,37 +216,54 @@
      (mbean-value "SyncsMinTime" "gauge" :prefix "syncs.min-time")
      (mbean-value "SyncsMaxTime" "gauge" :prefix "syncs.max-time"))
 
-    :name-node-info
+    :namenode-info
     (mbean
      (str prefix "-nn-info") "hadoop:service=NameNode,name=NameNodeInfo"
      {:prefix (str prefix ".nn-info") :from "prefix"}
      )
 
-    :data-node-activity
+    :datanode-activity
     (mbean
      (str prefix "-dn-act") "hadoop:service=DataNode,name=DataNodeActivity-*"
      {:prefix (str prefix ".dn-act") :from "prefix"}
-     (mbean-value "CollectionTime" "gauge"))
+     (mbean-value "bytes_read" "gauge" :prefix "bytes.read")
+     (mbean-value "bytes_written" "gauge" :prefix "bytes.written")
+     (mbean-value "blocks_read" "gauge" :prefix "blocks.read")
+     (mbean-value "blocks_written" "gauge" :prefix "blocks.written")
+     (mbean-value "blocks_replicated" "gauge" :prefix "blocks.replicated")
+     (mbean-value "blocks_removed" "gauge" :prefix "blocks.removed")
+     (mbean-value "blocks_verified" "gauge" :prefix "blocks.verified")
+     (mbean-value "writes_from_local_client" "gauge"
+                  :prefix "local-client-writes")
+     (mbean-value "writes_from_remote_client" "gauge"
+                  :prefix "remote-client-writes")
+     (mbean-value "readBlockOpAvgTime" "gauge"
+                  :prefix "read-block.avg-time")
+     (mbean-value "readBlockOpMinTime" "gauge"
+                  :prefix "read-block.min-time")
+     (mbean-value "readBlockOpMaxTime" "gauge"
+                  :prefix "read-block.max-time")
+     (mbean-value "readBlockOpNumOps" "gauge" :prefix "read-block.num-ops"))
 
-    :data-node-info
+    :datanode-info
     (mbean
      (str prefix "-dn-info") "hadoop:service=DataNode,name=DataNodeInfo"
      {:prefix (str prefix ".dn-info")}
      )
 
-    :data-node-state
+    :datanode-state
     (mbean
      (str prefix "-dn-state") "hadoop:service=DataNode,name=FSDatasetState-*"
      {:prefix (str prefix ".runtime")}
      )
 
-    :job-tracker-info
+    :jobtracker-info
     (mbean
      (str prefix "-jt-info") "hadoop:service=JobTracker,name=JobTrackerInfo"
      {:prefix (str prefix ".jt-info")}
      )
 
-    :task-tracker-info
+    :tasktracker-info
     (mbean
      (str prefix "-tt-info") "hadoop:service=TaskTracker,name=TaskTrackerInfo"
      {:prefix (str prefix ".tt-info")})
@@ -250,7 +271,8 @@
     :rpc-act
     (mbean
      (str prefix "-rpc-act") "hadoop:service=*,name=RpcActivityFor*"
-     {:prefix (str prefix ".rpc-act")})
+     {:prefix (str prefix ".rpc-act")}
+     (mbean-value "CallQueueLen" "gauge"))
 
     :rpc-act-detail
     (mbean
@@ -263,7 +285,7 @@
 
 (defn collectd-server-spec
   "Create a server spec that will log hadoop daemons via JMX"
-  [settings roles]
+  [settings-fn roles]
   (let [mbeans (concat
                 (jmx-mbeans
                  "jvm"
@@ -271,13 +293,14 @@
                   :compilation :class-loading])
                 (hadoop-mbeans
                  "hadoop"
-                 [;; :name-node-state
-                  :name-node-activity
-                  ;; :name-node-info
-                  ;; :data-node-activity :data-node-info :data-node-state
-                  ;; :job-tracker-info :task-tracker-info :rpc-act
+                 [;; :namenode-state
+                  :namenode-activity
+                  ;; :namenode-info
+                  :datanode-activity
+                  ;; :datanode-info :datanode-state
+                  ;; :jobtracker-info :tasktracker-info :rpc-act
                   ]))
-        connections (fn [hostname]
+        connections (fn [settings hostname]
                       (mapcat
                        (fn [role]
                          (when-let [{:keys [java]} (settings role)]
@@ -293,7 +316,8 @@
      :extends [(collectd-server)]
      :phases {:settings
               (plan-fn
-               [hostname target-name]
+               [hostname target-name
+                settings settings-fn]
                (collectd-add-plugin-config
                 :java
                 [[:JVMArg "-verbose:jni"]
@@ -303,10 +327,10 @@
                   :generic-jmx
                   {:prefix "jvm"
                    :mbeans mbeans
-                   :connections (connections hostname)})]))})))
+                   :connections (connections settings hostname)})]))})))
 
 (defn hadoop-group-spec
-  [base-node-spec settings group]
+  [base-node-spec settings-fn group]
   (let [{:keys [node-spec count roles]} (val group)]
     (debugf "hadoop-group-spec roles %s" (vec roles))
     (merge
@@ -316,8 +340,8 @@
       :extends (concat
                 [base-server
                  java
-                 (collectd-server-spec settings roles)]
-                (map #(hadoop-server-spec % (settings %)) roles))
+                 (collectd-server-spec settings-fn roles)]
+                (map #(hadoop-server-spec % settings-fn) roles))
       :count count))))
 
 (defn hadoop-cluster
@@ -332,11 +356,15 @@
                                 {(hadoop-java-env-var role)
                                  (join " " [(ssl-options java)
                                             (jmx-options java)])}})]))
-                      (into {}))]
+                      (into {}))
+        settings-fn (plan-fn
+                     [config (default-node-config (:config settings))]
+                     (m-result (debugf "default-node-config %s" config))
+                     (m-result (assoc settings :config config)))]
     (cluster-spec
      prefix
      :groups (conj
-              (map (partial hadoop-group-spec node-spec settings) groups)
+              (map (partial hadoop-group-spec node-spec settings-fn) groups)
               graphite-group))))
 
 
@@ -346,12 +374,12 @@
    "hc1"
    {:groups {:nn {:node-spec {}
                   :count 1
-                  :roles #{:name-node :job-tracker}}
+                  :roles #{:namenode :jobtracker}}
              :slave {:node-spec {}
                      :count 1
-                     :roles #{:data-node :task-tracker}}}
-    :name-node {:java {:jmx-port 3000}}
-    :secondary-name-node {:java {:jmx-port 3001}}
-    :job-tracker {:java {:jmx-port 3002}}
-    :data-node {:java {:jmx-port 3003}}
-    :task-tracker {:java {:jmx-port 3004}}}))
+                     :roles #{:datanode :tasktracker}}}
+    :namenode {:java {:jmx-port 3000}}
+    :secondary-namenode {:java {:jmx-port 3001}}
+    :jobtracker {:java {:jmx-port 3002}}
+    :datanode {:java {:jmx-port 3003}}
+    :tasktracker {:java {:jmx-port 3004}}}))

@@ -6,6 +6,7 @@
                  [com.palletops/collectd-crate "0.1.0-SNAPSHOT"]
                  [com.palletops/graphite-crate "0.1.0-SNAPSHOT"]
                  [com.palletops/hadoop-crate "0.1.0-SNAPSHOT"]
+                 [com.palletops/hadoop-config "0.1.0-SNAPSHOT"]
                  [org.cloudhoist/java "0.8.0-SNAPSHOT"]
                  [org.clojure/clojure "1.4.0"]]
   :repositories

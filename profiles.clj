@@ -7,7 +7,9 @@
    [ch.qos.logback/logback-classic "1.0.0"]]
   :test-selectors {:default (complement :live-test)
                    :live-test :live-test
-                   :all (constantly true)}}
+                   :all (constantly true)}
+  :repositories
+  {"sonatype" "https://oss.sonatype.org/content/repositories/releases/"}}
  :jclouds
  {:dependencies
   [[org.cloudhoist/pallet-jclouds "1.5.0-SNAPSHOT"]
