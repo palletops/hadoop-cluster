@@ -34,6 +34,7 @@
 
   <appender name="PALLETFILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>logs/pallet.log</file>
+    <append>false</append>
     <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
       <fileNamePattern>logs/old/pallet.%d{yyyy-MM-dd}.log</fileNamePattern>
       <maxHistory>3</maxHistory>
@@ -99,6 +100,10 @@
   <logger name="vmfest" level="DEBUG">
     <appender-ref ref="VMFESTFILE" />
   </logger>
+
+  <logger name="pallet.actions.direct.package" level="TRACE"/>
+  <logger name="pallet.crate-install" level="TRACE"/>
+  <logger name="pallet.execute" level="TRACE"/>
 
   <logger name="net.schmizz" level="WARN"/>
   <logger name="clj-ssh" level="DEBUG"/>

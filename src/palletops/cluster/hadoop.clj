@@ -10,7 +10,7 @@
            target-name]]
    [pallet.crate.automated-admin-user :only [automated-admin-user]]
    [pallet.crate.collectd
-    :only [collectd-config collectd-conf collectd-settings collectd-user
+    :only [collectd-conf collectd-settings collectd-user
            collectd-service collectd-service-script install-collectd
            collectd-add-plugin-config collectd-plugin-config jmx-mbeans
            mbean mbean-value mbean-table]]
@@ -131,7 +131,7 @@
              (collectd-server)]))
 
 ;;; # Data based configuration
-(def default-cluster-config
+(def default-cluster-settings
   {:namenode {:jmx-port 3000 :jmx-authenticate false}
    :secondary-namenode {:jmx-port 3001 :jmx-authenticate false}
    :jobtracker {:jmx-port 3002 :jmx-authenticate false}
@@ -276,20 +276,23 @@
                    :mbeans mbeans
                    :connections (connections settings hostname)})]))})))
 
+(defmethod hadoop-server-spec :graphite
+  [_ settings-fn & {:keys [instance-id] :as opts}]
+  graphite-server)
+
 (defn hadoop-group-spec
-  [base-node-spec settings-fn group]
+  [base-node-spec settings-fn features group]
   (let [{:keys [node-spec count roles]} (val group)]
     (debugf "hadoop-group-spec roles %s" (vec roles))
-    (merge
-     (merge base-node-spec node-spec)
-     (group-spec
-      (key group)
-      :extends (concat
-                [base-server
-                 java
-                 (collectd-server-spec settings-fn roles)]
-                (map #(hadoop-server-spec % settings-fn) roles))
-      :count count))))
+    (group-spec
+     (key group)
+     :extends (concat
+               [base-server java]
+               (when (features :collectd)
+                 [(collectd-server-spec settings-fn roles)])
+               (map #(hadoop-server-spec % settings-fn) roles))
+     :count count
+     :node-spec (merge base-node-spec node-spec))))
 
 (defn hadoop-cluster
   "Returns a cluster-spec for a hadoop cluster, configured as per the arguments.
@@ -308,25 +311,27 @@
              :slave {:node-spec {}
                      :count 1
                      :roles #{:datanode :tasktracker}}}
-    :hadoop-config {:io.file.buffer.size 65536}
-    :namenode {:jmx-port 3000}
-    :secondary-namenode {:jmx-port 3001}
-    :jobtracker {:jmx-port 3002}
-    :datanode {:jmx-port 3003}
-    :tasktracker {:jmx-port 3004}})"
-  [prefix {:keys [groups hadoop-config node-spec settings] :as config}]
-  (let [config (->
-                default-cluster-config
-                (deep-merge (dissoc config :groups :node-spec :hadoop-config))
-                (nested-maps->dotted-keys "pallet.")
-                (merge hadoop-config))
-        _ (debugf "hadoop-cluster %s" config)
-        settings-fn (plan-fn
-                     [config (default-node-config config)]
-                     (m-result (debugf "default-node-config %s" config))
-                     (m-result (assoc settings :config config)))]
+    :hadoop-config
+     {:io.file.buffer.size 65536
+      :config {
+       :namenode {:jmx-port 3000}
+       :secondary-namenode {:jmx-port 3001}
+       :jobtracker {:jmx-port 3002}
+       :datanode {:jmx-port 3003}
+       :tasktracker {:jmx-port 3004}}}})"
+  [{:keys [groups config hadoop-settings node-spec cluster-prefix]
+    :or {cluster-prefix "hc"}
+    :as settings}]
+  (let [hadoop-settings (deep-merge
+                         default-cluster-settings
+                         (nested-maps->dotted-keys config "pallet.")
+                         hadoop-settings)
+        _ (debugf "hadoop-cluster hadoop-settings %s" hadoop-settings)
+        settings-fn (plan-fn (default-node-config hadoop-settings))
+        roles (into #{} (mapcat :roles (vals groups)))
+        features (set (when (roles :graphite) [:collectd]))]
     (cluster-spec
-     prefix
-     :groups (conj
-              (map (partial hadoop-group-spec node-spec settings-fn) groups)
-              graphite-group))))
+     cluster-prefix
+     :groups (map
+              (partial hadoop-group-spec node-spec settings-fn features)
+              groups))))

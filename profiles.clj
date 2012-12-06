@@ -9,7 +9,7 @@
                    :live-test :live-test
                    :all (constantly true)}
   :repositories
-  {"sonatype" "https://oss.sonatype.org/content/repositories/releases/"}}
+  {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases/"}}}
  :jclouds
  {:dependencies
   [[org.cloudhoist/pallet-jclouds "1.5.0-SNAPSHOT"]
