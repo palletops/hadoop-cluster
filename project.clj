@@ -10,6 +10,7 @@
                  [org.cloudhoist/java "0.8.0-SNAPSHOT"]
                  [org.clojure/tools.cli "0.2.2"]
                  [org.clojure/clojure "1.4.0"]]
+  :main palletops.cluster.hadoop.cli
   :repositories
   {"sonatype-snapshots" "https://oss.sonatype.org/content/repositories/snapshots"
    "sonatype" "https://oss.sonatype.org/content/repositories/releases/"})
