@@ -31,10 +31,10 @@
        ["-s" "--spec-file" "Specify the cluster layout"
         :default "cluster_spec.clj"]
        ["-c" "--credentials" "Specify credentials in a clj format file"]
-       ["-v" "--verbose" "Output some verbose information"]
+       ["-v" "--verbose" "Output some verbose information" :flag true]
        ["-p" "--profile" "Pallet configuration profile to use"]
-       ["-h" "--phases" "Phases to run"]
-       ["-h" "--help"]))
+       ["-s" "--phases" "Phases to run"]
+       ["-h" "--help" "Show this help message" :flag true]))
 
 ;;; (cli-args ["start"])
 ;;; (cli-args ["--spec-file" "cluster_spec.clj" "start"])
