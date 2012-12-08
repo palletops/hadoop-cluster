@@ -10,6 +10,11 @@
                    :all (constantly true)}
   :repositories
   {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases/"}}}
+
+ :dist
+ {:aot [#"palletops\..*"]
+  :omit-source true}
+
  :jclouds
  {:dependencies
   [[org.cloudhoist/pallet-jclouds "1.5.0-SNAPSHOT"]
