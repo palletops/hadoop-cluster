@@ -13,6 +13,7 @@
 
  :dist
  {:aot [#"palletops\..*"]
+  :clean-non-project-classes true
   :omit-source true}
 
  :jclouds
