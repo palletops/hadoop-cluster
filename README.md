@@ -55,6 +55,9 @@ The `bin/hadoop` command supports three commands, `start` will start a cluster,
 `job` will run the job_spec on the cluster, and `destroy` will remove the
 cluster.
 
+The credentials to use are specified via pallet's `~/.pallet/config.clj` file.
+Pass the name of the required service with `--profile`.
+
 ## License
 
 Copyright © 2012 Hugo Duncan

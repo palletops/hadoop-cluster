@@ -30,19 +30,33 @@
   (cli args
        ["-s" "--spec-file" "Specify the cluster layout"
         :default "cluster_spec.clj"]
-       ["-c" "--credentials" "Specify credentials in a clj format file"]
+       ;; ["-c" "--credentials" "Specify credentials in a clj format file"]
        ["-v" "--verbose" "Output some verbose information" :flag true]
-       ["-p" "--profile" "Pallet configuration profile to use"]
-       ["-s" "--phases" "Phases to run"]
+       ["-p" "--profile"
+        "Pallet configuration profile to use (from ~/.pallet/config.clj)"]
+       ;; ["-s" "--phases" "Phases to run"]
        ["-h" "--help" "Show this help message" :flag true]))
 
 ;;; (cli-args ["start"])
 ;;; (cli-args ["--spec-file" "cluster_spec.clj" "start"])
 
-(defn -main
-  "Control a hadoop cluster.
+(def main-help
+  (str "Control a hadoop cluster.
 
-Invoke with --help for full options"
+Supported commands
+
+`start`
+: Starts the cluster (specified by default in cluster_spec.clj)
+
+`job job_spec.clj`
+: Runs a job on the cluster
+
+`destroy`
+: Tears down the cluster"
+       \newline \newline
+       (last (cli-args ["--help"]))))
+
+(defn ^{:doc main-help} -main
   [& args]
   (let [[{:keys [verbose spec-file help] :as opts}
          [^String command & args]
@@ -53,7 +67,7 @@ Invoke with --help for full options"
     (debug "options" opts)
     (debug "command" command)
     (when help
-      (println help-str)
+      (println main-help)
       (flush)
       (System/exit 0))
     (try
@@ -62,9 +76,6 @@ Invoke with --help for full options"
         (error (.getMessage e))))
     (System/exit 0)))
 
-;;; Hack to get cli help string into the -main :doc
-(.alterMeta #'-main update-in
-            (seq [[:doc] str \newline \newline (last (cli-args ["--help"]))]))
 
 ;;; (meta #'-main)
 ;;; (clojure.repl/doc -main)
