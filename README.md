@@ -6,9 +6,12 @@ maps.
 ## Usage
 
 The `bin/hadoop` script is a command line interface to build clusters and run
-jobs.
+jobs.  The script supports three commands; `start` will start a cluster, `job`
+will run the job_spec on the cluster, and `destroy` will remove the cluster.
 
-You will need a `cluster_spec.clj` to describe your cluster.
+You will need a file to describe your cluster. By default `cluster_spec.clj` is
+read from the current directory, and you can specify any file using the
+`--spec-file` command line switch.
 
 ```clj
 (def java-opts {:jmx-authenticate false :jmx-ssl false})
@@ -32,7 +35,21 @@ You will need a `cluster_spec.clj` to describe your cluster.
    :tasktracker (merge {:jmx-port 3004} java-opts)}}}
 ```
 
-Your job will need to be descibed in a `job_spec.clj` file.
+Your cloud credentials should be specified in `credentials.clj`, or in a file
+passed with the `--credentials` flag.
+
+As an alternative the credentials can be specified via pallet's
+`~/.pallet/config.clj` file.  In this case, pass the name of the required
+service with `--profile`.
+
+To start the cluster:
+
+    bin/hadoop start
+
+
+Your job will need to be descibed in a configuration file. A `job_spec.clj` file
+is included in the disribution to get you started.  This configuration file
+needs to be passed as an argument to the start comand.
 
 ```clj
 (defn s3n [path]
@@ -48,15 +65,17 @@ Your job will need to be descibed in a `job_spec.clj` file.
  :on-completion :terminate-cluster}
  ```
 
-You can use different names for these spec files an pass them to `bin/hadoop`
-with the relevant switches.
+The credentials referred to (via environment variables) in the job configuration
+above are distinct from the credentials that the CLI uses to create and control
+your hadoop cluster.
 
-The `bin/hadoop` command supports three commands, `start` will start a cluster,
-`job` will run the job_spec on the cluster, and `destroy` will remove the
-cluster.
+To run the job:
 
-The credentials to use are specified via pallet's `~/.pallet/config.clj` file.
-Pass the name of the required service with `--profile`.
+    bin/hadoop job job_spec.clj
+
+To manually destroy the cluster:
+
+    bin/hadoop destroy
 
 ## License
 
