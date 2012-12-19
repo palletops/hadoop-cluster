@@ -30,7 +30,8 @@
   (cli args
        ["-s" "--spec-file" "Specify the cluster layout"
         :default "cluster_spec.clj"]
-       ;; ["-c" "--credentials" "Specify credentials in a clj format file"]
+       ["-c" "--credentials" "Specify credentials in a clj format file"
+        :default "credentials.clj"]
        ["-v" "--verbose" "Output some verbose information" :flag true]
        ["-p" "--profile"
         "Pallet configuration profile to use (from ~/.pallet/config.clj)"]

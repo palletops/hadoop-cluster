@@ -7,11 +7,11 @@ cluster on successful completion of the job."
    [clojure.pprint :only [pprint]]
    [pallet.algo.fsmop :only [complete?]]
    [pallet.api :only [converge lift plan-fn server-spec]]
-   [pallet.configure :only [compute-service]]
+   [pallet.configure :only [compute-service compute-service-from-map]]
    [palletops.cluster.hadoop :only [hadoop-cluster]]
    [palletops.crate.hadoop :only [hadoop-jar]]
    [palletops.cluster.hadoop.cli-impl
-    :only [debug error read-cluster-spec read-job-spec]]))
+    :only [debug error read-cluster-spec read-credentials read-job-spec]]))
 
 (defn step-server-spec
   [step-spec]
@@ -19,10 +19,12 @@ cluster on successful completion of the job."
 
 (defn job
   "Job a cluster"
-  [{:keys [spec-file profile] :as options} [job-spec-file & _]]
+  [{:keys [credentials spec-file profile] :as options} [job-spec-file & _]]
   (let [spec (read-cluster-spec spec-file)
         cluster (hadoop-cluster spec)
-        service (compute-service profile)
+        service (if profile
+                  (compute-service profile)
+                  (compute-service-from-map (read-credentials credentials)))
         {:keys [on-completion] :as job-spec} (read-job-spec job-spec-file)
         step-specs (map step-server-spec (:steps job-spec))
         run-spec (server-spec :extends step-specs)

@@ -45,3 +45,9 @@
   [path]
   (check-readable path)
   (load-file path))
+
+(defn read-credentials
+  "Return the cluster spec at the specified path."
+  [path]
+  (check-readable path)
+  (load-file path))
