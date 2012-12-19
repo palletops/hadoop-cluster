@@ -21,6 +21,10 @@
 (def hadoop-book-test
   (server-spec :phases hadoop-book-phases))
 
+(deftest port-spec-test
+  (is (= {:network {:inbound-ports [8020 50070 8040 50030]}}
+         (port-spec [:namenode :jobtracker]))))
+
 #_(deftest ^:live-test live-test
   (let [settings {}]
     (doseq [image (images)]

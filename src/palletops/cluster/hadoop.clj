@@ -16,7 +16,7 @@
            mbean mbean-value mbean-table]]
    [pallet.crate.etc-hosts :only [set-hostname]]
    [pallet.crate.graphite :only [graphite]]
-   [palletops.crate.hadoop :only [hadoop-server-spec]]
+   [palletops.crate.hadoop :only [hadoop-server-spec hadoop-role-ports]]
    [palletops.hadoop-config
     :only [default-node-config nested-maps->dotted-keys]]
    [palletops.locos :only [deep-merge]]
@@ -280,6 +280,16 @@
   [_ settings-fn & {:keys [instance-id] :as opts}]
   graphite-server)
 
+(defn port-spec [roles]
+  {:network {:inbound-ports
+             (distinct
+              (conj
+               (->> (map hadoop-role-ports roles)
+                    (mapcat
+                     (fn [role-map]
+                       (mapcat (or role-map {}) [:internal :external]))))
+               22))}})
+
 (defn hadoop-group-spec
   [base-node-spec settings-fn features group]
   (let [{:keys [node-spec count roles]} (val group)]
@@ -292,7 +302,7 @@
                  [(collectd-server-spec settings-fn roles)])
                (map #(hadoop-server-spec % settings-fn) roles))
      :count count
-     :node-spec (merge base-node-spec node-spec))))
+     :node-spec (deep-merge (port-spec roles) base-node-spec node-spec))))
 
 (defn hadoop-cluster
   "Returns a cluster-spec for a hadoop cluster, configured as per the arguments.
