@@ -59,7 +59,10 @@ Supported commands
 : Runs a job on the cluster
 
 `destroy`
-: Tears down the cluster"
+: Tears down the cluster
+
+`Version`
+: Output the CLI version and exit"
        \newline \newline
        (last (cli-args ["--help"]))))
 
