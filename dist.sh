@@ -3,15 +3,21 @@
 # Build a distribution tarfile
 
 ## Download all dependencies
-lein pom
 mkdir -p lib
 rm lib/*
+lein with-profile +jclouds,+palletops pom
 mvn dependency:copy-dependencies -DoutputDirectory=lib
+rm lib/palletops* lib/hadoop-* lib/collectd* lib/graphite*
+cp resources/* lib
 
 ## Build a project jar, and add it to the libs
 ## TODO: use AOT
-lein do clean, with-profile +dist jar
-cp target/*.jar lib
+lein do \
+  with-profile +palletops clean, \
+  with-profile +dist,+aot-filter,+proguard,+palletops proguard \
+  || { echo "Failed to obfuscate"; exit 1; }
+
+cp target/proguard/*.jar lib
 
 ## Build a tafile
-tar cvfz ./palletops-hadoop.tar.gz README.md bin lib
+tar cvfz ./palletops-hadoop.tar.gz README.md bin lib cluster_spec.clj credentials.clj job_spec.clj
