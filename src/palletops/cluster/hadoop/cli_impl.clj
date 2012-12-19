@@ -1,7 +1,9 @@
 (ns palletops.cluster.hadoop.cli-impl
   "Implementation for the haoop cli"
   (:use
-   [clojure.java.io :only [file]]))
+   [clojure.java.io :only [file]]
+   [clojure.pprint :only [pprint]]
+   [pallet.node :only [hostname primary-ip private-ip]]))
 
 (defn eprintln [& args]
   (binding [*out* *err*]
@@ -51,3 +53,11 @@
   [path]
   (check-readable path)
   (load-file path))
+
+(defn print-cluster
+  [op]
+  (pprint
+   (into {} (for [{:keys [node roles]} (:targets op)]
+              [(primary-ip node) {:roles roles
+                                  :private-ip (private-ip node)
+                                  :hostname (hostname node)}]))))

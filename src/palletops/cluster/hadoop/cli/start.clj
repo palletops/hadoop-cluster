@@ -2,6 +2,7 @@
   "Task to start a cluster"
   (:use
    [clojure.pprint :only [pprint]]
+   [pallet.algo.fsmop :only [complete?]]
    [pallet.api :only [converge]]
    [pallet.configure :only [compute-service compute-service-from-map]]
    [palletops.cluster.hadoop :only [hadoop-cluster]]
@@ -29,6 +30,12 @@
                         :run :init
                         :install-test
                         :configure-test])]
-        @op)
+        @op
+        (if (complete? op)
+          (print-cluster @op)
+          (do
+            (println "An error occured")
+            (println @op)))
+        (flush))
       (error "Could not find pallet profile" profile))
     (debug "start: converge complete")))
