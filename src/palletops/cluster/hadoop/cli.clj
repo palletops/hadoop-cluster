@@ -41,6 +41,12 @@
 ;;; (cli-args ["start"])
 ;;; (cli-args ["--spec-file" "cluster_spec.clj" "start"])
 
+(defn expiry
+  []
+  (doto (java.util.GregorianCalendar.
+         (java.util.TimeZone/getTimeZone "GMT"))
+    (. add java.util.Calendar/MONTH 1)))
+
 (def main-help
   (str "Control a hadoop cluster.
 
@@ -71,6 +77,11 @@ Supported commands
       (println main-help)
       (flush)
       (System/exit 0))
+    (let [date (java.util.Date.)]
+      (when (.after date #=(expiry))
+        (error
+         "PalletOps CLI has expired, please contact palletops for a replacement")
+        (System/exit 1)))
     (try
       (run-task command opts args)
       (catch Exception e
