@@ -10,13 +10,12 @@ jobs.  The script supports three commands; `start` will start a cluster, `job`
 will run the job_spec on the cluster, and `destroy` will force the
 removal of the cluster.
 
-To launch a new Hadoop cluster you first will need need a description
-of the cluster to build. This is done by creating a cluster spec file.
+To launch a new Hadoop cluster you will first need a description of the cluster
+to build. This is done by creating a cluster spec file.
 
-The following example of cluster spec describes a cluster with one master
-and two slave nodes, with 2GB and 4GB of RAM respectively, both
-using `m1.large` instances running Ubuntu 12.04 and a Cloudera
-Distribution of Hadoop. 
+The following example of cluster spec describes a cluster with one master and
+two slave nodes, both using `m1.large` instances (7.5GB of RAM) running Ubuntu
+12.04 and a Cloudera Distribution of Hadoop.
 
 ```clj
 (def java-opts {:jmx-authenticate false :jmx-ssl false})
@@ -65,7 +64,7 @@ example of a job spec that runs the Hadoop word count.
 
 ## Usage
 
-Download and uncompress `palletops-hadoop.tar.gz`
+Download and uncompress `palletops-hadoop.tar.gz`.
 
 ```bash
 $ tar xzf palletops-hadoop.tar.gz
