@@ -75,11 +75,11 @@ $ cd palletops-hadoop
 
 Edit the file `credentials.clj` with your AWS identity and key.
 
-Open the file `cluster-spec.clj` and decide if you want to change the
+Open the file `cluster_spec.clj` and decide if you want to change the
 nodes hardware id or memory, and the number of slave. This file should
 work fine without any changes.
 
-Edit the file `job-spec.clj` adding your s3 credentials and the
+Edit the file `job_spec.clj` adding your s3 credentials and the
 destination bucket and directory.
 
 Start the cluster:

@@ -1,16 +1,22 @@
 (def java-opts {:jmx-authenticate false :jmx-ssl false})
 
+
 {:cluster-prefix "hc1"
- :groups {:nn {:node-spec {}
-               :count 1
-               :roles #{:namenode :jobtracker}}
-          :slave {:node-spec {}
-                  :count 1
-                  :roles #{:datanode :tasktracker}}
+ :groups {:master
+          {:node-spec {:hardware {:hardware-id "m1.large"
+                                  :min-ram 2048}}
+           :count 1
+           :roles #{:namenode :jobtracker}}
+          :slave
+          {:node-spec {:hardware {:hardware-id "m1.large"
+                                  :min-ram 4096}}
+           :count 2
+           :roles #{:datanode :tasktracker}}
           ;; :graphite {:count 1 :roles #{:graphite}}
           }
- :node-spec {:image
-             {:os-family :ubuntu :os-version-matches "12.04" :os-64-bit true}}
+ :node-spec {:image {:os-family :ubuntu
+                     :os-version-matches "12.04"
+                     :os-64-bit true}}
  :hadoop-settings
  {:dist :cloudera
   :dist-urls {:cloudera "http://3rd-party-dist.s3.amazonaws.com/"}
