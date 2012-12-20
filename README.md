@@ -55,6 +55,10 @@ example of a job spec that runs the Hadoop word count.
  :on-completion :terminate-cluster}
 ```
 
+The jar file to be run can be specified in several ways. A file already on the
+jobtracker can be specified with `:remote-file`.  A local file can be specified
+with `:local-file`.  A file at a given url can be specified with `:url`.
+
 ## Usage
 
 Download and uncompress `palletops-hadoop.tar.gz`.
