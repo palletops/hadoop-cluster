@@ -19,20 +19,18 @@ two slave nodes, both using `m1.large` instances (7.5GB of RAM) running Ubuntu
 
 ```clj
 {:cluster-prefix "hc1"
- :groups {:master
-           {:node-spec
-             {:hardware
-               {:hardware-id "m1.large"
-                :min-ram 2048}}
-            :count 1
-            :roles #{:namenode :jobtracker}}
-          :slave
-           {:node-spec
-             {:hardware
-               {:hardware-id "m1.large"
-                :min-ram 4096}}
-            :count 2
-            :roles #{:datanode :tasktracker}}}
+ :groups {:master {:node-spec
+                    {:hardware
+                      {:hardware-id "m1.large"
+                       :min-ram 2048}}
+                     :count 1
+                     :roles #{:namenode :jobtracker}}
+          :slave {:node-spec
+                   {:hardware
+                     {:hardware-id "m1.large"
+                       :min-ram 4096}}
+                  :count 2
+                  :roles #{:datanode :tasktracker}}}
  :node-spec {:image
              {:os-family :ubuntu
               :os-version-matches "12.04"
