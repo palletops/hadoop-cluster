@@ -18,13 +18,13 @@
  :groups
  {:master                                 ; group name
   {:node-spec {:hardware                  ; used to specify vm size choices
-               {:hardware-id "m1.large"}} ; "m1.large" is aws-specific
+               {:hardware-id "m1.medium"}}; "m1.medium" is aws-specific
    :count 1                               ; how many nodes to run in this group
    :roles #{:namenode :jobtracker}}       ; hadoop roles to run on these nodes
 
   :slave
   {:node-spec {:hardware
-               {:hardware-id "m1.large"}}
+               {:hardware-id "m1.medium"}}
    :count 2
    :roles #{:datanode :tasktracker}}}
 

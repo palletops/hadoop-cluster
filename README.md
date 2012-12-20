@@ -13,22 +13,20 @@ removal of the cluster.
 To launch a new Hadoop cluster you will first need a description of the cluster
 to build. This is done by creating a cluster spec file.
 
-The following example of cluster spec describes a cluster with one master and
-two slave nodes, both using `m1.large` instances (7.5GB of RAM) running Ubuntu
-12.04 and a Cloudera Distribution of Hadoop.
+The following example of cluster spec describes a cluster with one
+master and two slave nodes, both using `m1.medium` instances running
+Ubuntu 12.04 and a Cloudera Distribution of Hadoop.
 
 ```clj
 {:cluster-prefix "hc1"
  :groups {:master {:node-spec
                     {:hardware
-                      {:hardware-id "m1.large"
-                       :min-ram 2048}}
+                      {:hardware-id "m1.medium"}}
                      :count 1
                      :roles #{:namenode :jobtracker}}
           :slave {:node-spec
                    {:hardware
-                     {:hardware-id "m1.large"
-                       :min-ram 4096}}
+                     {:hardware-id "m1.medium"}}
                   :count 2
                   :roles #{:datanode :tasktracker}}}
  :node-spec {:image
