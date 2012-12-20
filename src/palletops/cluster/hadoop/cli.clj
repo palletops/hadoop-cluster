@@ -33,8 +33,7 @@
        ["-c" "--credentials" "Specify credentials in a clj format file"
         :default "credentials.clj"]
        ["-v" "--verbose" "Output some verbose information" :flag true]
-       ["-p" "--profile"
-        "Pallet configuration profile to use (from ~/.pallet/config.clj)"]
+       ["-p" "--profile" "Pallet configuration profile to use"]
        ;; ["-s" "--phases" "Phases to run"]
        ["-h" "--help" "Show this help message" :flag true]))
 
@@ -76,7 +75,7 @@ Supported commands
       (log-level! :debug))
     (debug "options" opts)
     (debug "command" command)
-    (when help
+    (when (or help (not command))
       (println main-help)
       (flush)
       (System/exit 0))

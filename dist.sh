@@ -20,4 +20,5 @@ lein do \
 cp target/proguard/*.jar lib
 
 ## Build a tafile
-tar cvfz ./palletops-hadoop.tar.gz README.md bin lib cluster_spec.clj credentials.clj job_spec.clj
+tar cvfz ./palletops-hadoop.tar.gz README.md bin lib \
+cluster_spec.clj cluster_spec_graphite.clj credentials.clj job_spec.clj
