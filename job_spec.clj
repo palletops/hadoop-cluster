@@ -4,9 +4,11 @@
         aws-secret <your-aws-s3-secret>]
     (format "s3n://%s:%s@%s" aws-key aws-secret path)))
 
-;;; As an alternative, put you s3 credentials directly in this file
+;;; As an alternative, you can specify s3 credentials via environment variables
 ;; (defn s3n [path]
-;;   (str "s3n:<your key>:<your secret>@" path))
+;;   (let [aws-key (System/getenv "AWS_KEY")
+;;         aws-secret (System/getenv "AWS_SECRET")]
+;;     (format "s3n://%s:%s@%s" aws-key aws-secret path)))
 
 {:steps
  [{:jar {:remote-file
