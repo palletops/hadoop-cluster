@@ -3,25 +3,36 @@
 Set up and run jobs on a cluster.  The cluster and jobs are described as data
 maps.
 
-## Usage
+## Introduction
 
 The `bin/hadoop` script is a command line interface to build clusters and run
 jobs.  The script supports three commands; `start` will start a cluster, `job`
-will run the job_spec on the cluster, and `destroy` will remove the cluster.
+will run the job_spec on the cluster, and `destroy` will force the
+removal of the cluster.
 
-You will need a file to describe your cluster. By default `cluster_spec.clj` is
-read from the current directory, and you can specify any file using the
-`--spec-file` command line switch.
+To launch a new Hadoop cluster you first will need need a description
+of the cluster to build. This is done by creating a cluster spec file.
+
+The following example of cluster spec describes a cluster with one master
+and two slave nodes, with 2GB and 4GB of RAM respectively, both
+using `m1.large` instances running Ubuntu 12.04 and a Cloudera
+Distribution of Hadoop. 
 
 ```clj
 (def java-opts {:jmx-authenticate false :jmx-ssl false})
 
 {:cluster-prefix "hc1"
- :groups {:nn {:node-spec {}
+ :groups {:master {:node-spec 
+                 {:hardware
+                   {:hardware-id "m1.large"
+                    :min-ram 2048}}
                :count 1
                :roles #{:namenode :jobtracker}}
-          :slave {:node-spec {}
-                  :count 1
+          :slave {:node-spec 
+                    {:hardware
+                      {:hardware-id "m1.large"
+                       :min-ram 4096}}
+                  :count 2
                   :roles #{:datanode :tasktracker}}}
  :node-spec {:image
              {:os-family :ubuntu :os-version-matches "12.04" :os-64-bit true}}
@@ -35,50 +46,86 @@ read from the current directory, and you can specify any file using the
    :tasktracker (merge {:jmx-port 3004} java-opts)}}}
 ```
 
-Your cloud credentials should be specified in `credentials.clj`, or in a file
-passed with the `--credentials` flag.
-
-As an alternative the credentials can be specified via pallet's
-`~/.pallet/config.clj` file.  In this case, pass the name of the required
-service with `--profile`.
-
-To start the cluster:
-
-    bin/hadoop start
-
-
-Your job will need to be descibed in a configuration file. A `job_spec.clj` file
-is included in the disribution to get you started.  This configuration file
-needs to be passed as an argument to the start comand.
+Similarly, the job to be run needs to be described. Below is an
+example of a job spec that runs the Hadoop word count. 
 
 ```clj
 (defn s3n [path]
-  (let [aws-key (System/getenv "AWS_KEY")
-        aws-secret (System/getenv "AWS_SECRET")]
+  (let [aws-key <your-aws-s3-key>
+        aws-secret <your-aws-s3-secret>]
     (format "s3n://%s:%s@%s" aws-key aws-secret path)))
 
 {:steps
  [{:jar {:remote-file "hadoop-examples-0.20.2-cdh3u0.jar"}
    :main "wordcount"
-   :input (s3n "hadoopbook/ncdc/all")
-   :output (s3n "your-bucket/hadoop-test")}]
+   :input (s3n "pallet-play/hadoop-examples")
+   :output (s3n "<your-dest-bucket>/<your-dest-directory>")}]
  :on-completion :terminate-cluster}
- ```
+```
 
-The credentials referred to (via environment variables) in the job configuration
-above are distinct from the credentials that the CLI uses to create and control
-your hadoop cluster.
+## Usage
 
-To run the job:
+Download and uncompress `palletops-hadoop.tar.gz`
 
-    bin/hadoop job job_spec.clj
+```bash
+$ tar xzf palletops-hadoop.tar.gz
+...
+$ cd palletops-hadoop
+```
 
-To manually destroy the cluster:
+Edit the file `credentials.clj` with your AWS identity and key.
 
-    bin/hadoop destroy
+Open the file `cluster-spec.clj` and decide if you want to change the
+nodes hardware id or memory, and the number of slave. This file should
+work fine without any changes.
+
+Edit the file `job-spec.clj` adding your s3 credentials and the
+destination bucket and directory.
+
+Start the cluster:
+
+```bash
+$ bin/hadoop start
+```
+
+If all works correctly, you should get something like this after a few
+log lines:
+
+```
+{"107.20.115.138"
+ {:roles #{:datanode :namenode :jobtracker},
+  :private-ip "10.80.133.215",
+  :hostname "hc1-master-c8a4f1b6"},
+ "174.129.113.172"
+ {:roles #{:datanode :tasktracker},
+  :private-ip "10.36.105.170",
+  :hostname "hc1-slave-dca4f1a2"},
+ "184.72.91.105"
+ {:roles #{:datanode :tasktracker},
+  :private-ip "10.82.254.132",
+  :hostname "hc1-slave-dea4f1a0"}}
+```
+
+Now it is time to run the job. At the shell, run:
+
+```bash
+$ bin/hadoop job job_spec.clj
+```
+
+The logging should give you an indication of the job progression. If
+the job finalizes correctly, the results will be found in the bucket
+and directory specified in the job spec and the cluster will be
+destroyed automatically.
+
+If the job fails, the cluster will not be destroyed, but you can
+manually destroy the cluster by running:
+
+```bash
+$ bin/hadoop destroy
+```
 
 ## License
 
-Copyright © 2012 Hugo Duncan
+Copyright © 2012 Hugo Duncan and Antoni Batchelli
 
 All rights reserved.
