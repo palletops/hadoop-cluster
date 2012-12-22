@@ -8,7 +8,7 @@ LIBDIR=${LIBDIR:-${BINDIR}/../lib/}
 # Java options
 XMS=-Xms96m
 XMX=-Xmx1g
-JAVA_ARGS="-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode"
+JAVA_ARGS="-XX:+UseConcMarkSweepGC -XX:+CMSIncrementalMode -Djava.awt.headless=true -Dfile.encoding=UTF-8 -XX:MaxPermSize=256m"
 
 java -server $XMX $XMS $JAVA_ARGS -cp "${LIBDIR}*" clojure.main \
  --main palletops.cluster.hadoop.cli "$@"
