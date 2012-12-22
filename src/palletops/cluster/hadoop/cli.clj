@@ -34,7 +34,7 @@
         :default "credentials.clj"]
        ["-v" "--verbose" "Output some verbose information" :flag true]
        ["-p" "--profile" "Pallet configuration profile to use"]
-       ;; ["-s" "--phases" "Phases to run"]
+       ["-s" "--phases" "Phases to run"]
        ["-h" "--help" "Show this help message" :flag true]))
 
 ;;; (cli-args ["start"])

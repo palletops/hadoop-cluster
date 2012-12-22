@@ -2,6 +2,7 @@
   "Task to start a cluster"
   (:use
    [clojure.pprint :only [pprint]]
+   [clojure.string :only [split]]
    [pallet.algo.fsmop :only [complete?]]
    [pallet.api :only [converge]]
    [pallet.configure :only [compute-service compute-service-from-map]]
@@ -11,7 +12,7 @@
 
 (defn start
   "Start a cluster"
-  [{:keys [spec-file credentials profile] :as options} args]
+  [{:keys [spec-file credentials profile phases] :as options} args]
   (let [spec (read-cluster-spec spec-file)
         cluster (hadoop-cluster spec)
         service (if profile
@@ -23,13 +24,15 @@
       (let [op (converge
                 (:groups cluster)
                 :compute service
-                :phase [:install
-                        :collect-ssh-keys
-                        :configure
-                        :restart-collectd
-                        :run :init
-                        :install-test
-                        :configure-test])]
+                :phase (if phases
+                         (map keyword (split phases #","))
+                         [:install
+                          :collect-ssh-keys
+                          :configure
+                          :restart-collectd
+                          :run :init
+                          :install-test
+                          :configure-test]))]
         @op
         (if (complete? op)
           (print-cluster @op)
