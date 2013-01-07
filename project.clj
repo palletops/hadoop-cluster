@@ -5,7 +5,7 @@
   :dependencies [[org.cloudhoist/pallet "0.8.0-alpha.7"]
                  [com.palletops/collectd-crate "0.1.0"]
                  [com.palletops/graphite-crate "0.1.0"]
-                 [com.palletops/hadoop-crate "0.1.1"]
+                 [com.palletops/hadoop-crate "0.1.2"]
                  [com.palletops/hadoop-config "0.1.0"]
                  [org.cloudhoist/java "0.8.0-alpha.1"]
                  [org.clojure/tools.cli "0.2.2"]
