@@ -1,4 +1,4 @@
-(defproject hadoop-cluster "0.1.0-SNAPSHOT"
+(defproject hadoop-cluster "0.1.0"
   :description "Hadoop cluster runner"
   :url "https://github.com/palletops/github-cluster"
   :license {:name "All rights reserved."}
