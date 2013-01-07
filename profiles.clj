@@ -1,7 +1,7 @@
 {:dev
  {:dependencies
   [[org.cloudhoist/pallet-vmfest "0.2.2-SNAPSHOT"]
-   [vmfest "0.3.0-alpha.1"]
+   [vmfest "0.3.0-alpha.1" :exclusions [commons-logging]]
    [org.clojars.tbatchelli/vboxjws "4.2.4"]
    [org.cloudhoist/pallet "0.8.0-alpha.7" :classifier "tests"]
    [org.cloudhoist/pallet-lein "0.5.2"]
