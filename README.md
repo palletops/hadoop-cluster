@@ -120,6 +120,6 @@ $ bin/hadoop destroy
 
 ## License
 
-Copyright © 2012 Hugo Duncan and Antoni Batchelli
+Copyright © 2012, 2013 Hugo Duncan and Antoni Batchelli
 
 All rights reserved.
