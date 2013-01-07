@@ -11,6 +11,14 @@
   :repositories
   {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases/"}}}
 
+ :release
+ {:plugins [[lein-set-version "0.2.1"]]
+  :set-version
+  {:updates [{:path "README.md"
+              :no-snapshot true
+              :search-regex
+              #"hadoop-cluster \"\d+\.\d+\.\d+\""}]}}
+
  :dist
  {:aot [#"palletops\..*" #"clojure\..*"]
   :jar-exclusions [#"logback-test.xml"]
