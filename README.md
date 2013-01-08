@@ -36,9 +36,6 @@ Ubuntu 12.04 and a Cloudera Distribution of Hadoop.
  :hadoop-settings {:dist :cloudera}}
 ```
 
-You can specify s3 credentials in the :hadoop-settings if you want to use
-credentials other than those used to start the cluster.
-
 Similarly, the job to be run needs to be described. Below is an
 example of a job spec that runs the Hadoop word count.
 
@@ -46,8 +43,8 @@ example of a job spec that runs the Hadoop word count.
 {:steps
  [{:jar {:remote-file "hadoop-examples-0.20.2-cdh3u0.jar"}
    :main "wordcount"
-   :input ("s3n://pallet-play/hadoop-examples")
-   :output ("s3n//<your-dest-bucket>/<your-dest-directory>")}]
+   :input "s3n://pallet-play/hadoop-examples"
+   :output "s3n//<your-dest-bucket>/<your-dest-directory>"}]
  :on-completion :terminate-cluster}
 ```
 
