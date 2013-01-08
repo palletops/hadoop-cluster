@@ -40,16 +40,11 @@ Similarly, the job to be run needs to be described. Below is an
 example of a job spec that runs the Hadoop word count.
 
 ```clj
-(defn s3n [path]
-  (let [aws-key <your-aws-s3-key>
-        aws-secret <your-aws-s3-secret>]
-    (format "s3n://%s:%s@%s" aws-key aws-secret path)))
-
 {:steps
  [{:jar {:remote-file "hadoop-examples-0.20.2-cdh3u0.jar"}
    :main "wordcount"
-   :input (s3n "pallet-play/hadoop-examples")
-   :output (s3n "<your-dest-bucket>/<your-dest-directory>")}]
+   :input "s3n://pallet-play/hadoop-examples"
+   :output "s3n//<your-dest-bucket>/<your-dest-directory>"}]
  :on-completion :terminate-cluster}
 ```
 
@@ -72,9 +67,6 @@ Edit the file `credentials.clj` with your AWS identity and key.
 Open the file `cluster_spec.clj` and decide if you want to change the
 nodes hardware id or memory, and the number of slave. This file should
 work fine without any changes.
-
-Edit the file `job_spec.clj` adding your s3 credentials and the
-destination bucket and directory.
 
 Start the cluster:
 

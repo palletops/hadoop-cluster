@@ -14,11 +14,20 @@ cp resources/* lib
 ## TODO: use AOT
 lein do \
   with-profile +palletops clean, \
-  with-profile +dist,+aot-filter,+proguard,+palletops proguard \
+  with-profile +dist,+aot-filter,+proguard,+palletops,+jclouds proguard \
   || { echo "Failed to obfuscate"; exit 1; }
 
 cp target/proguard/*.jar lib
 
 ## Build a tafile
-tar cvfz ./palletops-hadoop.tar.gz README.md bin lib \
-cluster_spec.clj cluster_spec_graphite.clj credentials.clj job_spec.clj
+rm -rf palletops-hadoop
+mkdir -p palletops-hadoop/lib
+mkdir -p palletops-hadoop/bin
+
+cp bin/* palletops-hadoop/bin
+cp lib/* palletops-hadoop/lib
+cp README.md \
+    cluster_spec.clj cluster_spec_graphite.clj credentials.clj job_spec.clj ReleaseNotes.md \
+    palletops-hadoop
+
+tar cvfz ./palletops-hadoop.tar.gz palletops-hadoop
