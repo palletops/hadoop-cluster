@@ -113,6 +113,8 @@
   <logger name="pallet.core.primitives" level="DEBUG"/>
   <!-- <logger name="pallet.execute.default-executor" level="TRACE"/> -->
 
+  <logger name="palletops.crate.hadoop.base" level="TRACE"/>
+
   <root level="DEBUG">
     <appender-ref ref="CONSOLE" />
   </root>

@@ -2,6 +2,7 @@
   "Task to start a cluster"
   (:use
    [clojure.pprint :only [pprint]]
+   [clojure.stacktrace :only [print-cause-trace]]
    [clojure.string :only [split]]
    [pallet.algo.fsmop :only [complete?]]
    [pallet.api :only [converge]]
@@ -38,7 +39,9 @@
           (print-cluster @op)
           (do
             (println "An error occured")
-            (println @op)))
+            (if-let [e (:exception @op)]
+              (print-cause-trace e)
+              (println @op))))
         (flush))
       (error "Could not find pallet profile" profile))
     (debug "start: converge complete")))

@@ -6,7 +6,7 @@
    [pallet.actions :only [package-manager]]
    [pallet.api :only [cluster-spec group-spec node-spec plan-fn server-spec]]
    [pallet.crate
-    :only [def-plan-fn get-settings get-node-settings nodes-with-role
+    :only [defplan get-settings get-node-settings nodes-with-role
            target-name]]
    [pallet.crate.automated-admin-user :only [automated-admin-user]]
    [pallet.crate.collectd
@@ -24,36 +24,35 @@
    [pallet.node :only [hostname primary-ip]]
    [pallet.utils :only [apply-map]]))
 
-(def-plan-fn collectd-settings-map
+(defplan collectd-settings-map
   []
-  [[logger] (nodes-with-role :graphite)
-   {:keys [carbon-config]} (get-node-settings (:node logger) :graphite {})
-   hostname target-name]
-  (m-result
-   {:install-strategy :pallet.crate.collectd/source ; :collectd5-ppa
-    :features [:java]
-    :config `[[:Hostname ~hostname]
-              [:Plugin :logfile
-               [[:LogLevel ~'info]
-                [:File "/var/log/collectd.log"]]]
-              [:Plugin ~'syslog [[:LogLevel ~'info]]]
-              [:Plugin ~'cpu []]
-              [:Plugin ~'interface []]
-              [:Plugin ~'load []]
-              [:Plugin ~'memory []]
-              [:Plugin ~'swap
-               [[:ReportByDevice false]
-                [:ReportBytes false]]]
-              [:Plugin ~'write_graphite
-               [[:Carbon
-                 [[:Host ~(primary-ip (:node logger))]
-                  [:Port ~(str (or
-                                (-> carbon-config :cache :LINE_RECEIVER_PORT)
-                                2003))]
-                  ;; EscapeCharacter "_"
-                  [:StoreRates false]
-                  [:Prefix "collectd."]
-                  [:AlwaysAppendDS false]]]]]]}))
+  (let [[logger] (nodes-with-role :graphite)
+        {:keys [carbon-config]} (get-node-settings (:node logger) :graphite {})
+        hostname target-name]
+    {:install-strategy :pallet.crate.collectd/source ; :collectd5-ppa
+     :features [:java]
+     :config `[[:Hostname ~hostname]
+               [:Plugin :logfile
+                [[:LogLevel ~'info]
+                 [:File "/var/log/collectd.log"]]]
+               [:Plugin ~'syslog [[:LogLevel ~'info]]]
+               [:Plugin ~'cpu []]
+               [:Plugin ~'interface []]
+               [:Plugin ~'load []]
+               [:Plugin ~'memory []]
+               [:Plugin ~'swap
+                [[:ReportByDevice false]
+                 [:ReportBytes false]]]
+               [:Plugin ~'write_graphite
+                [[:Carbon
+                  [[:Host ~(primary-ip (:node logger))]
+                   [:Port ~(str (or
+                                 (-> carbon-config :cache :LINE_RECEIVER_PORT)
+                                 2003))]
+                   ;; EscapeCharacter "_"
+                   [:StoreRates false]
+                   [:Prefix "collectd."]
+                   [:AlwaysAppendDS false]]]]]]}))
 
 (def graphite-settings
   {:webapp-bind-address "0.0.0.0:8080"})
@@ -73,19 +72,19 @@
   (server-spec
    :phases {:settings
             (plan-fn
-             [settings (collectd-settings-map)]
-             (collectd-settings settings))
+              (let [settings (collectd-settings-map)]
+                (collectd-settings settings)))
             :install (plan-fn
-                      (set-hostname)
-                      (collectd-user {})
-                      (install-collectd))
+                       (set-hostname)
+                       (collectd-user {})
+                       (install-collectd))
             :configure (plan-fn
-                        (collectd-service-script {})
-                        (collectd-conf {})
-                        (collectd-service
-                         {:action :restart :if-config-changed true}))
+                         (collectd-service-script {})
+                         (collectd-conf {})
+                         (collectd-service
+                          {:action :restart :if-config-changed true}))
             :restart-collectd (plan-fn
-                               (collectd-service {:action :restart}))}))
+                                (collectd-service {:action :restart}))}))
 
 (def graphite-server
   (server-spec
@@ -95,8 +94,8 @@
 
 (def java
   (server-spec
-   :phases {:settings (java-settings {:vendor :openjdk})
-            :install (install-java)}))
+   :phases {:settings (plan-fn (java-settings {:vendor :openjdk}))
+            :install (plan-fn (install-java))}))
 
 ;;; # Group Specs
 
@@ -240,7 +239,7 @@
                   :compilation :class-loading])
                 (hadoop-mbeans
                  "hadoop"
-                 [;; :namenode-state
+                 [ ;; :namenode-state
                   :namenode-activity
                   ;; :namenode-info
                   :datanode-activity
@@ -263,18 +262,18 @@
      :extends [(collectd-server)]
      :phases {:settings
               (plan-fn
-               [hostname target-name
-                settings settings-fn]
-               (collectd-add-plugin-config
-                :java
-                [[:JVMArg "-verbose:jni"]
-                 [:JVMArg "-Djava.class.path=/opt/collectd/bindings/java"]
-                 [:JVMArg "-Djava.library.path=/usr/local/lib/collectd"]
-                 (collectd-plugin-config
-                  :generic-jmx
-                  {:prefix "jvm"
-                   :mbeans mbeans
-                   :connections (connections settings hostname)})]))})))
+                (let [hostname target-name
+                      settings settings-fn]
+                  (collectd-add-plugin-config
+                   :java
+                   [[:JVMArg "-verbose:jni"]
+                    [:JVMArg "-Djava.class.path=/opt/collectd/bindings/java"]
+                    [:JVMArg "-Djava.library.path=/usr/local/lib/collectd"]
+                    (collectd-plugin-config
+                     :generic-jmx
+                     {:prefix "jvm"
+                      :mbeans mbeans
+                      :connections (connections settings hostname)})])))})))
 
 (defmethod hadoop-server-spec :graphite
   [_ settings-fn & {:keys [instance-id] :as opts}]
