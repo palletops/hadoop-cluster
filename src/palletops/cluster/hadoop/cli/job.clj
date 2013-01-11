@@ -5,6 +5,7 @@ hadoop-jar. `:on-completion` can be set to `:terminate-cluster` to destroy the
 cluster on successful completion of the job."
   (:use
    [clojure.pprint :only [pprint]]
+   [pallet.actions :only [exec-checked-script]]
    [pallet.algo.fsmop :only [complete?]]
    [pallet.api :only [converge lift plan-fn server-spec]]
    [pallet.configure :only [compute-service compute-service-from-map]]
@@ -15,7 +16,23 @@ cluster on successful completion of the job."
 
 (defn step-server-spec
   [step-spec]
-  (server-spec :phases {::run-jar (plan-fn (hadoop-jar step-spec))}))
+  (cond
+   (:jar step-spec)
+   (server-spec :phases {::run-step (plan-fn (hadoop-jar step-spec))})
+
+   (:script step-spec)
+   (server-spec
+    :phases {::run-step (plan-fn
+                         (exec-checked-script
+                          "job step"
+                          ~(:script step-spec)))})
+
+   (:script-file step-spec)
+   (server-spec
+    :phases {::run-step (plan-fn
+                          (exec-checked-script
+                          "job step"
+                          ~(slurp (:script-file step-spec))))})))
 
 (defn job
   "Job a cluster"
@@ -35,7 +52,7 @@ cluster on successful completion of the job."
     (debug "job-spec" (with-out-str (pprint job-spec)))
     (debug "groups" (with-out-str (pprint groups)))
     (if service
-      (let [op (lift groups :compute service :phase [::run-jar])]
+      (let [op (lift groups :compute service :phase [::run-step])]
         @op
         (when-let [e (:exception @op)]
           (clojure.stacktrace/print-cause-trace e)

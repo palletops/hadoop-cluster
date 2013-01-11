@@ -12,8 +12,10 @@
                  [org.clojure/clojure "1.4.0"]]
   :main palletops.cluster.hadoop.cli
   :repositories
-  {"sonatype-snapshots" "https://oss.sonatype.org/content/repositories/snapshots/"
-   "sonatype" "https://oss.sonatype.org/content/repositories/releases/"}
+  {"sonatype-snapshots"
+   {:url "https://oss.sonatype.org/content/repositories/snapshots/"}
+   "sonatype"
+   {:url "https://oss.sonatype.org/content/repositories/releases/"}}
   :test-selectors {:default (complement :live-test)
                    :live-test :live-test
                    :all (constantly true)})
