@@ -4,8 +4,15 @@
 /checkouts
 /logs
 pom.xml
+pom.xml.asc
 *.jar
 *.class
 .lein-deps-sum
 .lein-failures
 .lein-plugins
+.lein-repl-history
+dist.log
+hadoop_cluster
+palletops-hadoop
+palletops-hadoop.tar.gz
+test_credentials.clj
