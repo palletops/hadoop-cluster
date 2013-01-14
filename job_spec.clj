@@ -1,5 +1,5 @@
 {:steps
- [{:script-file "script/hello.sh"}
+ [{:script-file "examples/hello.sh"}
   {:script "echo hello inline script"}
   {:jar
    ;; The jarfile to run can be specified using pallet's remote-file options.
