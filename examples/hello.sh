@@ -1,1 +1,1 @@
-echo "Hello from hadoop setup"
+echo "Hello from hadoop setup" >> hello.txt
