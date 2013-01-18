@@ -5,9 +5,17 @@
    [clojure.pprint :only [pprint]]
    [pallet.node :only [hostname primary-ip private-ip]]))
 
+(def ^:dynamic *suppress-exit* nil)
+
+(defn exit [status]
+  (when-not *suppress-exit*
+    (shutdown-agents)
+    (System/exit status)))
+
 (defn eprintln [& args]
   (binding [*out* *err*]
-    (apply println args)))
+    (apply println args)
+    (flush)))
 
 (def log-level nil)
 
@@ -25,8 +33,8 @@
                          [(first args) (rest args)]
                          [nil args])]
     (apply eprintln args)
-    (shutdown-agents)
-    (System/exit (:exit-code options 1))))
+    (exit
+     (:exit-code options 1))))
 
 (defn check-readable
   "Ensure the specified file exists, and is readable. Exits otherwise."

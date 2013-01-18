@@ -2,7 +2,8 @@
   "Command line interface for hadoop clusters."
   (:use
    [clojure.tools.cli :only [cli]]
-   [palletops.cluster.hadoop.cli-impl :only [debug error log-level!]]))
+   [clojure.tools.logging :only [errorf]]
+   [palletops.cluster.hadoop.cli-impl :only [debug error exit log-level!]]))
 
 (def commands #{:start :destroy :run})
 
@@ -13,6 +14,7 @@
       (require ns)
       @(resolve (symbol (name ns) taskname)))
     (catch Exception e
+      (errorf e (str "Could not resolve task '" taskname "'"))
       (throw (Exception. (str "Could not resolve task '" taskname "'") e)))))
 
 (defn run-task
@@ -22,6 +24,12 @@
 ;;; (run-task "start" {:A 1} [1 2 3])
 ;;; (run-task "start" {:spec-file "cluster_spec.clj"} [1 2 3])
 ;;; (run-task "start" {:spec-file "cluster_spec.clj" :profile "vb4"} [1 2 3])
+
+(defn expiry
+  []
+  (doto (java.util.GregorianCalendar.
+         (java.util.TimeZone/getTimeZone "GMT"))
+    (. add java.util.Calendar/MONTH 1)))
 
 (defn cli-args
   "Process command line arguments. Returns an option map, a vector of arguments
@@ -39,12 +47,6 @@
 
 ;;; (cli-args ["start"])
 ;;; (cli-args ["--spec-file" "cluster_spec.clj" "start"])
-
-(defn expiry
-  []
-  (doto (java.util.GregorianCalendar.
-         (java.util.TimeZone/getTimeZone "GMT"))
-    (. add java.util.Calendar/MONTH 1)))
 
 (def main-help
   (str "Control a hadoop cluster.
@@ -78,7 +80,7 @@ Supported commands
     (when (or help (not command))
       (println main-help)
       (flush)
-      (System/exit 0))
+      (exit 0))
     (let [date (java.util.Date.)]
       (when (.after date #=(expiry))
         (error
@@ -87,8 +89,9 @@ Supported commands
     (try
       (run-task command opts args)
       (catch Exception e
+        (errorf e "Unexpected exception in task")
         (error (.getMessage e))))
-    (System/exit 0)))
+    (exit 0)))
 
 
 ;;; (meta #'-main)
