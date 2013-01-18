@@ -115,9 +115,9 @@
  :jclouds
  {:dependencies
   [[org.cloudhoist/pallet-jclouds "1.5.2-SNAPSHOT"]
-   [org.jclouds.provider/aws-ec2 "1.5.3"]
-   [org.jclouds.provider/aws-s3 "1.5.3"]
-   [org.jclouds.driver/jclouds-slf4j "1.5.3"
+   [org.jclouds.provider/aws-ec2 "1.5.5"]
+   [org.jclouds.provider/aws-s3 "1.5.5"]
+   [org.jclouds.driver/jclouds-slf4j "1.5.5"
     ;; the declared version is old and can overrule the resolved version
     :exclusions [org.slf4j/slf4j-api]]
-   [org.jclouds.driver/jclouds-sshj "1.5.3"]]}}
+   [org.jclouds.driver/jclouds-sshj "1.5.5"]]}}

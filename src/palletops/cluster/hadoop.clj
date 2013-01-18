@@ -2,8 +2,8 @@
   "Builds a hadoop cluster."
   (:use
    [clojure.string :only [join]]
-   [clojure.tools.logging :only [debugf]]
-   [pallet.actions :only [package-manager]]
+   [clojure.tools.logging :only [debugf tracef]]
+   [pallet.actions :only [package-manager plan-when]]
    [pallet.api :only [cluster-spec group-spec node-spec plan-fn server-spec]]
    [pallet.crate
     :only [defplan get-settings get-node-settings nodes-with-role
@@ -16,7 +16,8 @@
            mbean mbean-value mbean-table]]
    [pallet.crate.etc-hosts :only [set-hostname]]
    [pallet.crate.graphite :only [graphite]]
-   [palletops.crate.hadoop :only [hadoop-server-spec hadoop-role-ports]]
+   [palletops.crate.hadoop
+    :only [hadoop-role-ports hadoop-server-spec use-hosts-file]]
    [palletops.hadoop-config
     :only [default-node-config nested-maps->dotted-keys]]
    [palletops.locos :only [deep-merge]]
@@ -64,7 +65,8 @@
    :phases {:bootstrap (plan-fn
                         (package-manager :update)
                         (automated-admin-user)
-                        (set-hostname))}))
+                        (plan-when (use-hosts-file)
+                          (set-hostname)))}))
 
 (defn collectd-server
   "Basic collectd server-spec"
@@ -75,7 +77,8 @@
               (let [settings (collectd-settings-map)]
                 (collectd-settings settings)))
             :install (plan-fn
-                       (set-hostname)
+                       (plan-when (use-hosts-file)
+                         (set-hostname))
                        (collectd-user {})
                        (install-collectd))
             :configure (plan-fn
@@ -335,7 +338,8 @@
                          default-cluster-settings
                          (nested-maps->dotted-keys config "pallet.")
                          hadoop-settings)
-        _ (debugf "hadoop-cluster hadoop-settings %s" hadoop-settings)
+        _ (tracef "hadoop-cluster hadoop-settings %s"
+                  hadoop-settings) ; may log credentials!
         settings-fn (plan-fn (default-node-config hadoop-settings))
         roles (into #{} (mapcat :roles (vals groups)))
         features (set (when (roles :graphite) [:collectd]))]
