@@ -7,6 +7,7 @@
    [pallet.algo.fsmop :only [complete?]]
    [pallet.api :only [converge]]
    [pallet.configure :only [compute-service compute-service-from-map]]
+   [pallet.core.api :only [phase-errors]]
    [palletops.cluster.hadoop :only [hadoop-cluster]]
    [palletops.cluster.hadoop.cli-impl
     :only [debug error print-cluster read-cluster-spec read-credentials]]))
@@ -19,8 +20,8 @@
         service (if profile
                   (compute-service profile)
                   (compute-service-from-map (read-credentials credentials)))]
-    (debug "groups" (with-out-str
-                      (pprint (:groups cluster))))
+    (debug "groups" (with-out-str (pprint (:groups cluster))))
+    (debug "spec" (with-out-str (pprint spec)))
     (if service
       (let [op (converge
                 (:groups cluster)
@@ -39,9 +40,11 @@
           (print-cluster @op)
           (do
             (println "An error occured")
-            (if-let [e (:exception @op)]
-              (print-cause-trace e)
-              (println @op))))
+            (when-let [e (:exception @op)]
+              (print-cause-trace e))
+            (when-let [e (seq (phase-errors op))]
+              (pprint (->> e (map :error) (map #(dissoc % :type)))))
+            (println "See logs for further details")))
         (flush))
       (error "Could not find pallet profile" profile))
     (debug "start: converge complete")))

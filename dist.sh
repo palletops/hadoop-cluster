@@ -31,9 +31,11 @@ echo "Building tarfile..."
 rm -rf palletops-hadoop
 mkdir -p palletops-hadoop/lib
 mkdir -p palletops-hadoop/bin
+mkdir -p palletops-hadoop/examples
 
 cp bin/* palletops-hadoop/bin
 cp lib/* palletops-hadoop/lib
+cp examples/* palletops-hadoop/examples
 cp README.md \
     cluster_spec.clj cluster_spec_graphite.clj credentials.clj job_spec.clj ReleaseNotes.md \
     palletops-hadoop
