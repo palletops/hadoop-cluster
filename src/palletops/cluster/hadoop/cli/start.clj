@@ -34,7 +34,8 @@
                           :restart-collectd
                           :run :init
                           :install-test
-                          :configure-test]))]
+                          :configure-test])
+                :async true)]
         @op
         (if (complete? op)
           (print-cluster @op)

@@ -2,6 +2,8 @@
 
 # Build a distribution tarfile
 
+# mvn install:install-file -Dfile=proguard4.8/lib/proguard.jar -DgroupId=net.sf.proguard -DartifactId=proguard -Dpackaging=jar -Dversion=4.8
+
 LOG=dist.log
 rm -f ${LOG}
 

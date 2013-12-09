@@ -1,12 +1,12 @@
 {:dev
  {:dependencies
-  [[org.cloudhoist/pallet-vmfest "0.3.0-SNAPSHOT"]
+  [[org.cloudhoist/pallet-vmfest "0.3.0-alpha.3"]
    ;; [org.clojars.tbatchelli/vboxjws "4.2.4"]
    [org.clojars.tbatchelli/vboxjxpcom "4.2.4"]
-   [org.cloudhoist/pallet "0.8.0-SNAPSHOT" :classifier "tests"]
-   [org.cloudhoist/pallet-lein "0.5.2"]
-   [com.palletops/hadoop-book-example "0.1.0-SNAPSHOT"]
-   [ch.qos.logback/logback-classic "1.0.7"]
+   [com.palletops/pallet "0.8.0-SNAPSHOT" :classifier "tests"]
+   [com.palletops/pallet-lein "0.6.0-beta.9"]
+   [com.palletops/hadoop-book-example "0.1.1-SNAPSHOT"]
+   [ch.qos.logback/logback-classic "1.0.9"]
    [org.slf4j/jcl-over-slf4j "1.6.6"]]
   :repositories
   {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases/"}}}
@@ -114,10 +114,11 @@
 
  :jclouds
  {:dependencies
-  [[org.cloudhoist/pallet-jclouds "1.5.2-SNAPSHOT"]
+  [[com.palletops/pallet-jclouds "1.5.3"]
    [org.jclouds.provider/aws-ec2 "1.5.5"]
    [org.jclouds.provider/aws-s3 "1.5.5"]
    [org.jclouds.driver/jclouds-slf4j "1.5.5"
     ;; the declared version is old and can overrule the resolved version
     :exclusions [org.slf4j/slf4j-api]]
-   [org.jclouds.driver/jclouds-sshj "1.5.5"]]}}
+   [org.jclouds.driver/jclouds-sshj "1.5.5"]]}
+ :proguard {:plugins [[lein-proguard "0.1.0"]]}}

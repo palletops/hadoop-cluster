@@ -21,7 +21,8 @@
     (if service
       (let [op (converge
                 (map #(assoc % :count 0) (:groups cluster))
-                :compute service)]
+                :compute service
+                :async true)]
         @op)
       (error "Could not find pallet profile" profile))
     (debug "destroy: converge complete")))

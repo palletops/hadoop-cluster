@@ -104,17 +104,18 @@
   <logger name="pallet.crate-install" level="TRACE"/>
   <logger name="pallet.execute" level="TRACE"/>
 
-  <logger name="net.schmizz" level="WARN"/>
+  <logger name="net.schmizz" level="DEBUG"/>
   <logger name="clj-ssh" level="DEBUG"/>
   <logger name="pallet.action-plan" level="DEBUG"/>
   <logger name="pallet.algo.fsm" level="WARN"/>
   <logger name="pallet.algo.fsmop" level="WARN"/>
   <logger name="pallet.core.primitives" level="DEBUG"/>
   <!-- <logger name="pallet.execute.default-executor" level="TRACE"/> -->
+  <logger name=".primitives" level="DEBUG"/>
 
   <logger name="palletops.crate.hadoop.base" level="TRACE"/>
 
-  <root level="DEBUG">
+  <root level="TRACE">
     <appender-ref ref="CONSOLE" />
   </root>
 

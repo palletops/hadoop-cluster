@@ -1,29 +1,25 @@
 (ns palletops.cluster.hadoop
   "Builds a hadoop cluster."
-  (:use
-   [clojure.string :only [join]]
-   [clojure.tools.logging :only [debugf tracef]]
-   [pallet.actions :only [package-manager plan-when]]
-   [pallet.api :only [cluster-spec group-spec node-spec plan-fn server-spec]]
+  (:require
+   [clojure.string :refer [join]]
+   [clojure.tools.logging :refer [debugf tracef]]
+   [pallet.actions :refer [package-manager plan-when]]
+   [pallet.api :refer [cluster-spec group-spec node-spec plan-fn server-spec]]
    [pallet.crate
-    :only [defplan get-settings get-node-settings nodes-with-role
+    :refer [defplan get-settings get-node-settings nodes-with-role
            target-name]]
-   [pallet.crate.automated-admin-user :only [automated-admin-user]]
-   [pallet.crate.collectd
-    :only [collectd-conf collectd-settings collectd-user
-           collectd-service collectd-service-script install-collectd
-           collectd-add-plugin-config collectd-plugin-config jmx-mbeans
-           mbean mbean-value mbean-table]]
-   [pallet.crate.etc-hosts :only [set-hostname]]
-   [pallet.crate.graphite :only [graphite]]
+   [pallet.crate.automated-admin-user :refer [automated-admin-user]]
+   [pallet.crate.collectd :as collectd]
+   [pallet.crate.etc-hosts :refer [set-hostname]]
+   [pallet.crate.graphite :as graphite]
    [palletops.crate.hadoop
-    :only [hadoop-role-ports hadoop-server-spec use-hosts-file]]
+    :refer [hadoop-role-ports hadoop-server-spec use-hosts-file]]
    [palletops.hadoop-config
-    :only [default-node-config nested-maps->dotted-keys]]
-   [palletops.locos :only [deep-merge]]
-   [pallet.crate.java :only [install-java java-settings]]
-   [pallet.node :only [hostname primary-ip]]
-   [pallet.utils :only [apply-map]]))
+    :refer [default-node-config nested-maps->dotted-keys]]
+   [palletops.locos :refer [deep-merge]]
+   [pallet.crate.java :as java]
+   [pallet.node :refer [hostname primary-ip]]
+   [pallet.utils :refer [apply-map]]))
 
 (defplan collectd-settings-map
   []
@@ -74,31 +70,31 @@
   (server-spec
    :phases {:settings
             (plan-fn
-              (let [settings (collectd-settings-map)]
-                (collectd-settings settings)))
+              (let [settings (collectd/settings-map)]
+                (collectd/settings settings)))
             :install (plan-fn
                        (plan-when (use-hosts-file)
                          (set-hostname))
-                       (collectd-user {})
-                       (install-collectd))
+                       (collectd/user {})
+                       (collectd/install))
             :configure (plan-fn
-                         (collectd-service-script {})
-                         (collectd-conf {})
-                         (collectd-service
+                         (collectd/service-script {})
+                         (collectd/configure {})
+                         (collectd/service
                           {:action :restart :if-config-changed true}))
             :restart-collectd (plan-fn
-                                (collectd-service {:action :restart}))}))
+                                (collectd/service {:action :restart}))}))
 
 (def graphite-server
   (server-spec
-   :extends [(graphite graphite-settings)]
+   :extends [(graphite/server-spec graphite-settings)]
    :roles #{:graphite}))
 
 
 (def java
   (server-spec
-   :phases {:settings (plan-fn (java-settings {:vendor :openjdk}))
-            :install (plan-fn (install-java))}))
+   :phases {:settings (plan-fn (java/settings {:vendor :openjdk}))
+            :install (plan-fn (java/install {}))}))
 
 ;;; # Group Specs
 
@@ -148,83 +144,83 @@
   [prefix components]
   (map
    {:namenode-state
-    (mbean
+    (collectd/mbean
      (str prefix "-nn-state") "hadoop:service=NameNode,name=FSNamesystemState"
      {:prefix (str prefix ".nn-state")}
-     (mbean-value "OpenFileDescriptorCount" "gauge" :prefix "filedes.open"))
+     (collectd/mbean-value "OpenFileDescriptorCount" "gauge" :prefix "filedes.open"))
 
     :namenode-activity
-    (mbean
+    (collectd/mbean
      (str prefix "-nn-act") "hadoop:service=NameNode,name=NameNodeActivity"
      {:prefix (str prefix ".nn-act")}
-     (mbean-value "AddBlockOps" "gauge" :prefix "add.block-ops")
-     (mbean-value "fsImageLoadTime" "gauge" :prefix "fs-image-load-time")
-     (mbean-value "FilesRenamed" "gauge" :prefix "files.renamed")
-     (mbean-value "SyncsNumOps" "gauge" :prefix "syncs.num-ops")
-     (mbean-value "SyncsAvgTime" "gauge" :prefix "syncs.avg-time")
-     (mbean-value "SyncsMinTime" "gauge" :prefix "syncs.min-time")
-     (mbean-value "SyncsMaxTime" "gauge" :prefix "syncs.max-time"))
+     (collectd/mbean-value "AddBlockOps" "gauge" :prefix "add.block-ops")
+     (collectd/mbean-value "fsImageLoadTime" "gauge" :prefix "fs-image-load-time")
+     (collectd/mbean-value "FilesRenamed" "gauge" :prefix "files.renamed")
+     (collectd/mbean-value "SyncsNumOps" "gauge" :prefix "syncs.num-ops")
+     (collectd/mbean-value "SyncsAvgTime" "gauge" :prefix "syncs.avg-time")
+     (collectd/mbean-value "SyncsMinTime" "gauge" :prefix "syncs.min-time")
+     (collectd/mbean-value "SyncsMaxTime" "gauge" :prefix "syncs.max-time"))
 
     :namenode-info
-    (mbean
+    (collectd/mbean
      (str prefix "-nn-info") "hadoop:service=NameNode,name=NameNodeInfo"
      {:prefix (str prefix ".nn-info") :from "prefix"}
      )
 
     :datanode-activity
-    (mbean
+    (collectd/mbean
      (str prefix "-dn-act") "hadoop:service=DataNode,name=DataNodeActivity-*"
      {:prefix (str prefix ".dn-act") :from "prefix"}
-     (mbean-value "bytes_read" "gauge" :prefix "bytes.read")
-     (mbean-value "bytes_written" "gauge" :prefix "bytes.written")
-     (mbean-value "blocks_read" "gauge" :prefix "blocks.read")
-     (mbean-value "blocks_written" "gauge" :prefix "blocks.written")
-     (mbean-value "blocks_replicated" "gauge" :prefix "blocks.replicated")
-     (mbean-value "blocks_removed" "gauge" :prefix "blocks.removed")
-     (mbean-value "blocks_verified" "gauge" :prefix "blocks.verified")
-     (mbean-value "writes_from_local_client" "gauge"
+     (collectd/mbean-value "bytes_read" "gauge" :prefix "bytes.read")
+     (collectd/mbean-value "bytes_written" "gauge" :prefix "bytes.written")
+     (collectd/mbean-value "blocks_read" "gauge" :prefix "blocks.read")
+     (collectd/mbean-value "blocks_written" "gauge" :prefix "blocks.written")
+     (collectd/mbean-value "blocks_replicated" "gauge" :prefix "blocks.replicated")
+     (collectd/mbean-value "blocks_removed" "gauge" :prefix "blocks.removed")
+     (collectd/mbean-value "blocks_verified" "gauge" :prefix "blocks.verified")
+     (collectd/mbean-value "writes_from_local_client" "gauge"
                   :prefix "local-client-writes")
-     (mbean-value "writes_from_remote_client" "gauge"
+     (collectd/mbean-value "writes_from_remote_client" "gauge"
                   :prefix "remote-client-writes")
-     (mbean-value "readBlockOpAvgTime" "gauge"
+     (collectd/mbean-value "readBlockOpAvgTime" "gauge"
                   :prefix "read-block.avg-time")
-     (mbean-value "readBlockOpMinTime" "gauge"
+     (collectd/mbean-value "readBlockOpMinTime" "gauge"
                   :prefix "read-block.min-time")
-     (mbean-value "readBlockOpMaxTime" "gauge"
+     (collectd/mbean-value "readBlockOpMaxTime" "gauge"
                   :prefix "read-block.max-time")
-     (mbean-value "readBlockOpNumOps" "gauge" :prefix "read-block.num-ops"))
+     (collectd/mbean-value "readBlockOpNumOps" "gauge" :prefix "read-block.num-ops"))
 
     :datanode-info
-    (mbean
+    (collectd/mbean
      (str prefix "-dn-info") "hadoop:service=DataNode,name=DataNodeInfo"
      {:prefix (str prefix ".dn-info")}
      )
 
     :datanode-state
-    (mbean
+    (collectd/mbean
      (str prefix "-dn-state") "hadoop:service=DataNode,name=FSDatasetState-*"
      {:prefix (str prefix ".runtime")}
      )
 
     :jobtracker-info
-    (mbean
+    (collectd/mbean
      (str prefix "-jt-info") "hadoop:service=JobTracker,name=JobTrackerInfo"
      {:prefix (str prefix ".jt-info")}
      )
 
     :tasktracker-info
-    (mbean
+    (collectd/mbean
      (str prefix "-tt-info") "hadoop:service=TaskTracker,name=TaskTrackerInfo"
      {:prefix (str prefix ".tt-info")})
 
     :rpc-act
-    (mbean
+    (collectd/mbean
      (str prefix "-rpc-act") "hadoop:service=*,name=RpcActivityFor*"
      {:prefix (str prefix ".rpc-act")}
-     (mbean-value "CallQueueLen" "gauge"))
+     (collectd/mbean-value "CallQueueLen" "gauge"))
 
     :rpc-act-detail
-    (mbean
+    (collectd/mbean
      (str prefix "-rpc-act-detail")
      "hadoop:service=*,name=RpcDetailedActivityFor*"
      {:prefix (str prefix ".rpc-act-detail")})}
@@ -236,7 +232,7 @@
   "Create a server spec that will log hadoop daemons via JMX"
   [settings-fn roles]
   (let [mbeans (concat
-                (jmx-mbeans
+                (collectd/jmx-mbeans
                  "jvm"
                  [:os :memory :memory-pool :gc :runtime :threading
                   :compilation :class-loading])
@@ -254,7 +250,7 @@
                        (fn [role]
                          (when-let [config (-> settings :config role)]
                            (when-let [port (:jmx-port config)]
-                             (collectd-plugin-config
+                             (collectd/plugin-config
                               :generic-jmx-connection
                               {:url (format jmx-endpoint port)
                                :prefix (str (name role) ".")
@@ -267,12 +263,12 @@
               (plan-fn
                 (let [hostname target-name
                       settings settings-fn]
-                  (collectd-add-plugin-config
+                  (collectd/add-plugin-config
                    :java
                    [[:JVMArg "-verbose:jni"]
                     [:JVMArg "-Djava.class.path=/opt/collectd/bindings/java"]
                     [:JVMArg "-Djava.library.path=/usr/local/lib/collectd"]
-                    (collectd-plugin-config
+                    (collectd/plugin-config
                      :generic-jmx
                      {:prefix "jvm"
                       :mbeans mbeans

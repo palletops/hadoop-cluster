@@ -62,7 +62,7 @@ cluster on successful completion of the job."
     (debug "job-spec" (with-out-str (pprint job-spec)))
     (debug "groups" (with-out-str (pprint groups)))
     (if service
-      (let [op (lift groups :compute service :phase [::run-step])]
+      (let [op (lift groups :compute service :phase [::run-step] :async true)]
         @op
         (when-let [e (:exception @op)]
           (clojure.stacktrace/print-cause-trace e)
