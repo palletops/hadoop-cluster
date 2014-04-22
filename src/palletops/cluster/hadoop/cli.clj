@@ -25,12 +25,6 @@
 ;;; (run-task "start" {:spec-file "cluster_spec.clj"} [1 2 3])
 ;;; (run-task "start" {:spec-file "cluster_spec.clj" :profile "vb4"} [1 2 3])
 
-(defn expiry
-  []
-  (doto (java.util.GregorianCalendar.
-         (java.util.TimeZone/getTimeZone "GMT"))
-    (. add java.util.Calendar/MONTH 1)))
-
 (defn cli-args
   "Process command line arguments. Returns an option map, a vector of arguments
   and a help string."
@@ -81,11 +75,6 @@ Supported commands
       (println main-help)
       (flush)
       (exit 0))
-    (let [date (java.util.Date.)]
-      (when (.after date #=(expiry))
-        (error
-         "PalletOps CLI has expired, please contact palletops for a replacement")
-        (System/exit 1)))
     (try
       (run-task command opts args)
       (catch Exception e
