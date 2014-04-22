@@ -61,7 +61,7 @@
    :phases {:bootstrap (plan-fn
                         (package-manager :update)
                         (automated-admin-user)
-                        (plan-when (use-hosts-file)
+                        (when (use-hosts-file)
                           (set-hostname)))}))
 
 (defn collectd-server
@@ -73,7 +73,7 @@
               (let [settings (collectd/settings-map)]
                 (collectd/settings settings)))
             :install (plan-fn
-                       (plan-when (use-hosts-file)
+                       (when (use-hosts-file)
                          (set-hostname))
                        (collectd/user {})
                        (collectd/install))
