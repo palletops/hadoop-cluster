@@ -1,7 +1,9 @@
 (defproject com.palletops/hadoop-cluster "0.1.2-SNAPSHOT"
   :description "Hadoop cluster runner"
-  :url "https://github.com/palletops/github-cluster"
-  :license {:name "All rights reserved."}
+  :url "https://github.com/palletops/hadoop-cluster"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :scm {:url "git@github.com:palletops/hadoop-cluster.git"}
   :dependencies [[com.palletops/pallet "0.8.0-RC.9"]
                  [com.palletops/collectd-crate "0.8.0-alpha.4"]
                  [com.palletops/graphite-crate "0.8.0-alpha.2"]

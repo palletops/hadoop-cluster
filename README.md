@@ -106,6 +106,6 @@ $ lein with-profiles +jclouds run destroy
 
 ## License
 
-Copyright © 2012, 2013 Hugo Duncan and Antoni Batchelli
+Licensed under [EPL](http://www.eclipse.org/legal/epl-v10.html)
 
 All rights reserved.
