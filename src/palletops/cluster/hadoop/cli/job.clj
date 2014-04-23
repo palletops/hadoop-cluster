@@ -71,7 +71,8 @@ cluster on successful completion of the job."
         (when (and (complete? op) (= on-completion :terminate-cluster))
           (let [op (converge
                 (map #(assoc % :count 0) (:groups cluster))
-                :compute service)]
+                :compute service
+                :async true)]
             @op
             (when-not (complete? op)
               (if-let [e (:exception @op)]
