@@ -1,16 +1,10 @@
 {:dev
  {:dependencies
-  [[org.cloudhoist/pallet-vmfest "0.3.0-alpha.3"]
-   ;; [org.clojars.tbatchelli/vboxjws "4.2.4"]
-   [org.clojars.tbatchelli/vboxjxpcom "4.2.4"]
-   [com.palletops/pallet "0.8.0-SNAPSHOT" :classifier "tests"]
+  [;;[com.palletops/pallet-vmfest "0.4.0-alpha.1"]
+   [com.palletops/pallet "0.8.0-RC.9" :classifier "tests"]
    [com.palletops/pallet-lein "0.6.0-beta.9"]
-   [com.palletops/hadoop-book-example "0.1.1-SNAPSHOT"]
+   [com.palletops/hadoop-book-example "0.1.1"]
    [ch.qos.logback/logback-classic "1.0.9"]
-   [org.slf4j/jcl-over-slf4j "1.6.6"]]
-  :repositories
-  {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases/"}}}
-
  :release
  {:plugins [[lein-set-version "0.2.1"]]
   :set-version
