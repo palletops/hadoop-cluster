@@ -1,16 +1,17 @@
 (ns palletops.cluster.hadoop-test
-  (:use
-   clojure.test
-   palletops.cluster.hadoop
-   [clojure.tools.logging :only [debugf]]
-   [pallet.algo.fsmop :only [complete?]]
-   [pallet.api :only [group-spec lift plan-fn server-spec]]
-   [pallet.live-test :only [images test-nodes]]
-   [pallet.script :only [with-script-context]]
-   [pallet.stevedore :only [with-script-language]]
-   [palletops.crate.hadoop.base :only [base-settings default-settings dist-rules]]
+  (:require
+   [clojure.test :refer :all]
+   [palletops.cluster.hadoop :refer :all]
+   [clojure.tools.logging :refer [debugf]]
+   [pallet.algo.fsmop :refer [complete?]]
+   [pallet.api :refer [group-spec lift plan-fn server-spec]]
+   [pallet.live-test :refer [images test-nodes]]
+   [pallet.script :refer [with-script-context]]
+   [pallet.stevedore :refer [with-script-language]]
+   [palletops.crate.hadoop.base
+    :refer [base-settings default-settings dist-rules]]
    [palletops.hadoop.hadoop-book-example
-    :only [download-books import-books-to-hdfs run-books get-books-output]]))
+    :refer [download-books import-books-to-hdfs run-books get-books-output]]))
 
 (def hadoop-book-phases
   {:install-test (plan-fn (download-books))

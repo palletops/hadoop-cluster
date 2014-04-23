@@ -54,13 +54,7 @@ with `:local-file`.  A file at a given url can be specified with `:url`.
 
 ## Usage
 
-Download and uncompress `palletops-hadoop.tar.gz`.
-
-```bash
-$ tar xzf palletops-hadoop.tar.gz
-...
-$ cd palletops-hadoop
-```
+Checkout this project.
 
 Edit the file `credentials.clj` with your AWS identity and key.
 
@@ -71,7 +65,7 @@ work fine without any changes.
 Start the cluster:
 
 ```bash
-$ bin/hadoop start
+$ lein with-profiles +jclouds run  start
 ```
 
 If all works correctly, you should get something like this after a few
@@ -95,7 +89,7 @@ log lines:
 Now it is time to run the job. At the shell, run:
 
 ```bash
-$ bin/hadoop job job_spec.clj
+$ lein with-profiles +jclouds run job job_spec.clj
 ```
 
 The logging should give you an indication of the job progression. If
@@ -107,11 +101,11 @@ If the job fails, the cluster will not be destroyed, but you can
 manually destroy the cluster by running:
 
 ```bash
-$ bin/hadoop destroy
+$ lein with-profiles +jclouds run destroy
 ```
 
 ## License
 
-Copyright © 2012, 2013 Hugo Duncan and Antoni Batchelli
+Licensed under [EPL](http://www.eclipse.org/legal/epl-v10.html)
 
 All rights reserved.

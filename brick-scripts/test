@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR="$(dirname $0)"
+DIR="$(dirname $SCRIPT_DIR)"
+
+echo "Create distribution in ${DIR}"
+
+cd ${DIR}
+${DIR}/dist.sh || exit 1
+
+
+echo "Unpack distribution"
+
+mkdir -p tmp
+rm -rf tmp/*
+
+cd tmp || exit 1
+tar xvfz ../palletops-hadoop.tar.gz || { echo "Failed to unpack distribution"; exit 1; }
+cd palletops-hadoop || { echo "Failed to cd into distribution"; exit 1; }
+
+
+echo "Now execute a test job"
+
+if ! [ -f "../../test_credentials.clj" ]; then
+  echo "Create test_credentials.clj in the hadoop-cluster root in order to run tests"
+  exit 1
+fi
+
+# cp "../../test_credentials.clj" crendentials.clj

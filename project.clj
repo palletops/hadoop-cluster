@@ -1,19 +1,18 @@
-(defproject com.palletops/hadoop-cluster "0.1.1"
+(defproject com.palletops/hadoop-cluster "0.1.2"
   :description "Hadoop cluster runner"
-  :url "https://github.com/palletops/github-cluster"
-  :license {:name "All rights reserved."}
-  :dependencies [[org.cloudhoist/pallet "0.8.0-alpha.7"]
-                 [com.palletops/collectd-crate "0.1.0"]
-                 [com.palletops/graphite-crate "0.1.0"]
-                 [com.palletops/hadoop-crate "0.1.3"]
-                 [com.palletops/hadoop-config "0.1.0"]
-                 [org.cloudhoist/java "0.8.0-alpha.1"]
+  :url "https://github.com/palletops/hadoop-cluster"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :scm {:url "git@github.com:palletops/hadoop-cluster.git"}
+  :dependencies [[com.palletops/pallet "0.8.0-RC.9"]
+                 [com.palletops/collectd-crate "0.8.0-alpha.4"]
+                 [com.palletops/graphite-crate "0.8.0-alpha.2"]
+                 [com.palletops/hadoop-crate "0.1.6"]
+                 [com.palletops/hadoop-config "0.1.1"]
+                 [com.palletops/java-crate "0.8.0-beta.4"]
                  [org.clojure/tools.cli "0.2.2"]
                  [org.clojure/clojure "1.4.0"]]
   :main palletops.cluster.hadoop.cli
-  :repositories
-  {"sonatype-snapshots" "https://oss.sonatype.org/content/repositories/snapshots/"
-   "sonatype" "https://oss.sonatype.org/content/repositories/releases/"}
   :test-selectors {:default (complement :live-test)
                    :live-test :live-test
                    :all (constantly true)})

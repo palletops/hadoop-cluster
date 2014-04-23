@@ -1,59 +1,55 @@
 (ns palletops.cluster.hadoop
   "Builds a hadoop cluster."
-  (:use
-   [clojure.string :only [join]]
-   [clojure.tools.logging :only [debugf]]
-   [pallet.actions :only [package-manager]]
-   [pallet.api :only [cluster-spec group-spec node-spec plan-fn server-spec]]
+  (:require
+   [clojure.string :refer [join]]
+   [clojure.tools.logging :refer [debugf tracef]]
+   [pallet.actions :refer [package-manager plan-when]]
+   [pallet.api :refer [cluster-spec group-spec node-spec plan-fn server-spec]]
    [pallet.crate
-    :only [def-plan-fn get-settings get-node-settings nodes-with-role
+    :refer [defplan get-settings get-node-settings nodes-with-role
            target-name]]
-   [pallet.crate.automated-admin-user :only [automated-admin-user]]
-   [pallet.crate.collectd
-    :only [collectd-conf collectd-settings collectd-user
-           collectd-service collectd-service-script install-collectd
-           collectd-add-plugin-config collectd-plugin-config jmx-mbeans
-           mbean mbean-value mbean-table]]
-   [pallet.crate.etc-hosts :only [set-hostname]]
-   [pallet.crate.graphite :only [graphite]]
-   [palletops.crate.hadoop :only [hadoop-server-spec hadoop-role-ports]]
+   [pallet.crate.automated-admin-user :refer [automated-admin-user]]
+   [pallet.crate.collectd :as collectd]
+   [pallet.crate.etc-hosts :refer [set-hostname]]
+   [pallet.crate.graphite :as graphite]
+   [palletops.crate.hadoop
+    :refer [hadoop-role-ports hadoop-server-spec use-hosts-file]]
    [palletops.hadoop-config
-    :only [default-node-config nested-maps->dotted-keys]]
-   [palletops.locos :only [deep-merge]]
-   [pallet.crate.java :only [install-java java-settings]]
-   [pallet.node :only [hostname primary-ip]]
-   [pallet.utils :only [apply-map]]))
+    :refer [default-node-config nested-maps->dotted-keys]]
+   [palletops.locos :refer [deep-merge]]
+   [pallet.crate.java :as java]
+   [pallet.node :refer [hostname primary-ip]]
+   [pallet.utils :refer [apply-map]]))
 
-(def-plan-fn collectd-settings-map
+(defplan collectd-settings-map
   []
-  [[logger] (nodes-with-role :graphite)
-   {:keys [carbon-config]} (get-node-settings (:node logger) :graphite {})
-   hostname target-name]
-  (m-result
-   {:install-strategy :pallet.crate.collectd/source ; :collectd5-ppa
-    :features [:java]
-    :config `[[:Hostname ~hostname]
-              [:Plugin :logfile
-               [[:LogLevel ~'info]
-                [:File "/var/log/collectd.log"]]]
-              [:Plugin ~'syslog [[:LogLevel ~'info]]]
-              [:Plugin ~'cpu []]
-              [:Plugin ~'interface []]
-              [:Plugin ~'load []]
-              [:Plugin ~'memory []]
-              [:Plugin ~'swap
-               [[:ReportByDevice false]
-                [:ReportBytes false]]]
-              [:Plugin ~'write_graphite
-               [[:Carbon
-                 [[:Host ~(primary-ip (:node logger))]
-                  [:Port ~(str (or
-                                (-> carbon-config :cache :LINE_RECEIVER_PORT)
-                                2003))]
-                  ;; EscapeCharacter "_"
-                  [:StoreRates false]
-                  [:Prefix "collectd."]
-                  [:AlwaysAppendDS false]]]]]]}))
+  (let [[logger] (nodes-with-role :graphite)
+        {:keys [carbon-config]} (get-node-settings (:node logger) :graphite {})
+        hostname target-name]
+    {:install-strategy :pallet.crate.collectd/source ; :collectd5-ppa
+     :features [:java]
+     :config `[[:Hostname ~hostname]
+               [:Plugin :logfile
+                [[:LogLevel ~'info]
+                 [:File "/var/log/collectd.log"]]]
+               [:Plugin ~'syslog [[:LogLevel ~'info]]]
+               [:Plugin ~'cpu []]
+               [:Plugin ~'interface []]
+               [:Plugin ~'load []]
+               [:Plugin ~'memory []]
+               [:Plugin ~'swap
+                [[:ReportByDevice false]
+                 [:ReportBytes false]]]
+               [:Plugin ~'write_graphite
+                [[:Carbon
+                  [[:Host ~(primary-ip (:node logger))]
+                   [:Port ~(str (or
+                                 (-> carbon-config :cache :LINE_RECEIVER_PORT)
+                                 2003))]
+                   ;; EscapeCharacter "_"
+                   [:StoreRates false]
+                   [:Prefix "collectd."]
+                   [:AlwaysAppendDS false]]]]]]}))
 
 (def graphite-settings
   {:webapp-bind-address "0.0.0.0:8080"})
@@ -65,7 +61,8 @@
    :phases {:bootstrap (plan-fn
                         (package-manager :update)
                         (automated-admin-user)
-                        (set-hostname))}))
+                        (when (use-hosts-file)
+                          (set-hostname)))}))
 
 (defn collectd-server
   "Basic collectd server-spec"
@@ -73,30 +70,31 @@
   (server-spec
    :phases {:settings
             (plan-fn
-             [settings (collectd-settings-map)]
-             (collectd-settings settings))
+              (let [settings (collectd/settings-map)]
+                (collectd/settings settings)))
             :install (plan-fn
-                      (set-hostname)
-                      (collectd-user {})
-                      (install-collectd))
+                       (when (use-hosts-file)
+                         (set-hostname))
+                       (collectd/user {})
+                       (collectd/install))
             :configure (plan-fn
-                        (collectd-service-script {})
-                        (collectd-conf {})
-                        (collectd-service
-                         {:action :restart :if-config-changed true}))
+                         (collectd/service-script {})
+                         (collectd/configure {})
+                         (collectd/service
+                          {:action :restart :if-config-changed true}))
             :restart-collectd (plan-fn
-                               (collectd-service {:action :restart}))}))
+                                (collectd/service {:action :restart}))}))
 
 (def graphite-server
   (server-spec
-   :extends [(graphite graphite-settings)]
+   :extends [(graphite/server-spec graphite-settings)]
    :roles #{:graphite}))
 
 
 (def java
   (server-spec
-   :phases {:settings (java-settings {:vendor :openjdk})
-            :install (install-java)}))
+   :phases {:settings (plan-fn (java/settings {:vendor :openjdk}))
+            :install (plan-fn (java/install {}))}))
 
 ;;; # Group Specs
 
@@ -146,83 +144,83 @@
   [prefix components]
   (map
    {:namenode-state
-    (mbean
+    (collectd/mbean
      (str prefix "-nn-state") "hadoop:service=NameNode,name=FSNamesystemState"
      {:prefix (str prefix ".nn-state")}
-     (mbean-value "OpenFileDescriptorCount" "gauge" :prefix "filedes.open"))
+     (collectd/mbean-value "OpenFileDescriptorCount" "gauge" :prefix "filedes.open"))
 
     :namenode-activity
-    (mbean
+    (collectd/mbean
      (str prefix "-nn-act") "hadoop:service=NameNode,name=NameNodeActivity"
      {:prefix (str prefix ".nn-act")}
-     (mbean-value "AddBlockOps" "gauge" :prefix "add.block-ops")
-     (mbean-value "fsImageLoadTime" "gauge" :prefix "fs-image-load-time")
-     (mbean-value "FilesRenamed" "gauge" :prefix "files.renamed")
-     (mbean-value "SyncsNumOps" "gauge" :prefix "syncs.num-ops")
-     (mbean-value "SyncsAvgTime" "gauge" :prefix "syncs.avg-time")
-     (mbean-value "SyncsMinTime" "gauge" :prefix "syncs.min-time")
-     (mbean-value "SyncsMaxTime" "gauge" :prefix "syncs.max-time"))
+     (collectd/mbean-value "AddBlockOps" "gauge" :prefix "add.block-ops")
+     (collectd/mbean-value "fsImageLoadTime" "gauge" :prefix "fs-image-load-time")
+     (collectd/mbean-value "FilesRenamed" "gauge" :prefix "files.renamed")
+     (collectd/mbean-value "SyncsNumOps" "gauge" :prefix "syncs.num-ops")
+     (collectd/mbean-value "SyncsAvgTime" "gauge" :prefix "syncs.avg-time")
+     (collectd/mbean-value "SyncsMinTime" "gauge" :prefix "syncs.min-time")
+     (collectd/mbean-value "SyncsMaxTime" "gauge" :prefix "syncs.max-time"))
 
     :namenode-info
-    (mbean
+    (collectd/mbean
      (str prefix "-nn-info") "hadoop:service=NameNode,name=NameNodeInfo"
      {:prefix (str prefix ".nn-info") :from "prefix"}
      )
 
     :datanode-activity
-    (mbean
+    (collectd/mbean
      (str prefix "-dn-act") "hadoop:service=DataNode,name=DataNodeActivity-*"
      {:prefix (str prefix ".dn-act") :from "prefix"}
-     (mbean-value "bytes_read" "gauge" :prefix "bytes.read")
-     (mbean-value "bytes_written" "gauge" :prefix "bytes.written")
-     (mbean-value "blocks_read" "gauge" :prefix "blocks.read")
-     (mbean-value "blocks_written" "gauge" :prefix "blocks.written")
-     (mbean-value "blocks_replicated" "gauge" :prefix "blocks.replicated")
-     (mbean-value "blocks_removed" "gauge" :prefix "blocks.removed")
-     (mbean-value "blocks_verified" "gauge" :prefix "blocks.verified")
-     (mbean-value "writes_from_local_client" "gauge"
+     (collectd/mbean-value "bytes_read" "gauge" :prefix "bytes.read")
+     (collectd/mbean-value "bytes_written" "gauge" :prefix "bytes.written")
+     (collectd/mbean-value "blocks_read" "gauge" :prefix "blocks.read")
+     (collectd/mbean-value "blocks_written" "gauge" :prefix "blocks.written")
+     (collectd/mbean-value "blocks_replicated" "gauge" :prefix "blocks.replicated")
+     (collectd/mbean-value "blocks_removed" "gauge" :prefix "blocks.removed")
+     (collectd/mbean-value "blocks_verified" "gauge" :prefix "blocks.verified")
+     (collectd/mbean-value "writes_from_local_client" "gauge"
                   :prefix "local-client-writes")
-     (mbean-value "writes_from_remote_client" "gauge"
+     (collectd/mbean-value "writes_from_remote_client" "gauge"
                   :prefix "remote-client-writes")
-     (mbean-value "readBlockOpAvgTime" "gauge"
+     (collectd/mbean-value "readBlockOpAvgTime" "gauge"
                   :prefix "read-block.avg-time")
-     (mbean-value "readBlockOpMinTime" "gauge"
+     (collectd/mbean-value "readBlockOpMinTime" "gauge"
                   :prefix "read-block.min-time")
-     (mbean-value "readBlockOpMaxTime" "gauge"
+     (collectd/mbean-value "readBlockOpMaxTime" "gauge"
                   :prefix "read-block.max-time")
-     (mbean-value "readBlockOpNumOps" "gauge" :prefix "read-block.num-ops"))
+     (collectd/mbean-value "readBlockOpNumOps" "gauge" :prefix "read-block.num-ops"))
 
     :datanode-info
-    (mbean
+    (collectd/mbean
      (str prefix "-dn-info") "hadoop:service=DataNode,name=DataNodeInfo"
      {:prefix (str prefix ".dn-info")}
      )
 
     :datanode-state
-    (mbean
+    (collectd/mbean
      (str prefix "-dn-state") "hadoop:service=DataNode,name=FSDatasetState-*"
      {:prefix (str prefix ".runtime")}
      )
 
     :jobtracker-info
-    (mbean
+    (collectd/mbean
      (str prefix "-jt-info") "hadoop:service=JobTracker,name=JobTrackerInfo"
      {:prefix (str prefix ".jt-info")}
      )
 
     :tasktracker-info
-    (mbean
+    (collectd/mbean
      (str prefix "-tt-info") "hadoop:service=TaskTracker,name=TaskTrackerInfo"
      {:prefix (str prefix ".tt-info")})
 
     :rpc-act
-    (mbean
+    (collectd/mbean
      (str prefix "-rpc-act") "hadoop:service=*,name=RpcActivityFor*"
      {:prefix (str prefix ".rpc-act")}
-     (mbean-value "CallQueueLen" "gauge"))
+     (collectd/mbean-value "CallQueueLen" "gauge"))
 
     :rpc-act-detail
-    (mbean
+    (collectd/mbean
      (str prefix "-rpc-act-detail")
      "hadoop:service=*,name=RpcDetailedActivityFor*"
      {:prefix (str prefix ".rpc-act-detail")})}
@@ -234,13 +232,13 @@
   "Create a server spec that will log hadoop daemons via JMX"
   [settings-fn roles]
   (let [mbeans (concat
-                (jmx-mbeans
+                (collectd/jmx-mbeans
                  "jvm"
                  [:os :memory :memory-pool :gc :runtime :threading
                   :compilation :class-loading])
                 (hadoop-mbeans
                  "hadoop"
-                 [;; :namenode-state
+                 [ ;; :namenode-state
                   :namenode-activity
                   ;; :namenode-info
                   :datanode-activity
@@ -252,7 +250,7 @@
                        (fn [role]
                          (when-let [config (-> settings :config role)]
                            (when-let [port (:jmx-port config)]
-                             (collectd-plugin-config
+                             (collectd/plugin-config
                               :generic-jmx-connection
                               {:url (format jmx-endpoint port)
                                :prefix (str (name role) ".")
@@ -263,18 +261,18 @@
      :extends [(collectd-server)]
      :phases {:settings
               (plan-fn
-               [hostname target-name
-                settings settings-fn]
-               (collectd-add-plugin-config
-                :java
-                [[:JVMArg "-verbose:jni"]
-                 [:JVMArg "-Djava.class.path=/opt/collectd/bindings/java"]
-                 [:JVMArg "-Djava.library.path=/usr/local/lib/collectd"]
-                 (collectd-plugin-config
-                  :generic-jmx
-                  {:prefix "jvm"
-                   :mbeans mbeans
-                   :connections (connections settings hostname)})]))})))
+                (let [hostname target-name
+                      settings settings-fn]
+                  (collectd/add-plugin-config
+                   :java
+                   [[:JVMArg "-verbose:jni"]
+                    [:JVMArg "-Djava.class.path=/opt/collectd/bindings/java"]
+                    [:JVMArg "-Djava.library.path=/usr/local/lib/collectd"]
+                    (collectd/plugin-config
+                     :generic-jmx
+                     {:prefix "jvm"
+                      :mbeans mbeans
+                      :connections (connections settings hostname)})])))})))
 
 (defmethod hadoop-server-spec :graphite
   [_ settings-fn & {:keys [instance-id] :as opts}]
@@ -336,7 +334,8 @@
                          default-cluster-settings
                          (nested-maps->dotted-keys config "pallet.")
                          hadoop-settings)
-        _ (debugf "hadoop-cluster hadoop-settings %s" hadoop-settings)
+        _ (tracef "hadoop-cluster hadoop-settings %s"
+                  hadoop-settings) ; may log credentials!
         settings-fn (plan-fn (default-node-config hadoop-settings))
         roles (into #{} (mapcat :roles (vals groups)))
         features (set (when (roles :graphite) [:collectd]))]
