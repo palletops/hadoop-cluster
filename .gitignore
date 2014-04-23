@@ -5,6 +5,8 @@
 /logs
 pom.xml
 pom.xml.asc
+src/cfg/current.clj
+test/pallet/test_env/project.clj
 *.jar
 *.class
 .lein-deps-sum
