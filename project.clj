@@ -1,4 +1,4 @@
-(defproject com.palletops/hadoop-cluster "0.1.2"
+(defproject com.palletops/hadoop-cluster "0.1.3-SNAPSHOT"
   :description "Hadoop cluster runner"
   :url "https://github.com/palletops/hadoop-cluster"
   :license {:name "Eclipse Public License"
