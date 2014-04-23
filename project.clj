@@ -1,4 +1,4 @@
-(defproject com.palletops/hadoop-cluster "0.1.2-SNAPSHOT"
+(defproject com.palletops/hadoop-cluster "0.1.2"
   :description "Hadoop cluster runner"
   :url "https://github.com/palletops/hadoop-cluster"
   :license {:name "Eclipse Public License"
@@ -7,7 +7,7 @@
   :dependencies [[com.palletops/pallet "0.8.0-RC.9"]
                  [com.palletops/collectd-crate "0.8.0-alpha.4"]
                  [com.palletops/graphite-crate "0.8.0-alpha.2"]
-                 [com.palletops/hadoop-crate "0.1.6-SNAPSHOT"]
+                 [com.palletops/hadoop-crate "0.1.6"]
                  [com.palletops/hadoop-config "0.1.1"]
                  [com.palletops/java-crate "0.8.0-beta.4"]
                  [org.clojure/tools.cli "0.2.2"]
