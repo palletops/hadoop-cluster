@@ -290,15 +290,16 @@
 
 (defn hadoop-group-spec
   [base-node-spec settings-fn features group]
-  (let [{:keys [node-spec count roles]} (val group)]
+  (let [{:keys [node-spec count roles extends]} (val group)]
     (debugf "hadoop-group-spec roles %s" (vec roles))
     (group-spec
      (key group)
      :extends (concat
                [base-server java]
-               (when (features :collectd)
+               (if (features :collectd)
                  [(collectd-server-spec settings-fn roles)])
-               (map #(hadoop-server-spec % settings-fn) roles))
+               (map #(hadoop-server-spec % settings-fn) roles)
+               extends)
      :count count
      :node-spec (deep-merge (port-spec roles) base-node-spec node-spec))))
 
